@@ -44,3 +44,4 @@ pkg/api/*.gen.go
 # output packagets
 /packaging/deb/opt/daos
 /packaging/rpm/SOURCES
+/packaging/rpm/RPMS

@@ -27,6 +27,20 @@ type model struct {
 	current    string
 }
 
+func initialModel() model {
+	daemonURL := os.Getenv("DAOS_URL")
+	if daemonURL == "" {
+		daemonURL = "http://localhost:8080/api/v1"
+	}
+	return model{
+		menu:       models.NewMenu(),
+		hosts:      models.NewHostsList(daemonURL),
+		packages:   models.NewPackagesList(daemonURL),
+		deployments: models.NewDeploymentsList(daemonURL),
+		current:    "menu",
+	}
+}
+
 func (m model) Init() tea.Cmd {
 	return nil
 }
@@ -71,23 +85,15 @@ func (m model) View() string {
 		s = m.packages.View()
 	case "deployments":
 		s = m.deployments.View()
+	default:
+		s = m.menu.View()
 	}
 
 	return fmt.Sprintf("%s\n\n%s", titleStyle.Render("DAOS - Deployment and Orchestration Service"), s)
 }
 
 func main() {
-	daemonURL := os.Getenv("DAOS_URL")
-	if daemonURL == "" {
-		daemonURL = "http://localhost:8080/api/v1"
-	}
-
-	p := tea.NewProgram(model{
-		menu:       models.NewMenu(),
-		hosts:      models.NewHostsList(daemonURL),
-		packages:   models.NewPackagesList(daemonURL),
-		deployments: models.NewDeploymentsList(daemonURL),
-	})
+	p := tea.NewProgram(initialModel())
 
 	if err := p.Start(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
