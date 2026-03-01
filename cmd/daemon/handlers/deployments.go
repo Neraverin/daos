@@ -4,20 +4,20 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/daos/daos/pkg/api"
-	"github.com/daos/daos/pkg/ansible"
-	"github.com/daos/daos/pkg/models"
+	"github.com/Neraverin/daos/pkg/api"
+	"github.com/Neraverin/daos/pkg/ansible"
+	"github.com/Neraverin/daos/pkg/models"
 	"github.com/gin-gonic/gin"
 )
 
 func (s *Server) ListDeployments(ctx *gin.Context) {
 	rows, err := s.db.Query(`
-		SELECT 
-			d.id, 
-			d.host_id, 
-			d.package_id, 
-			d.status, 
-			d.created_at, 
+		SELECT
+			d.id,
+			d.host_id,
+			d.package_id,
+			d.status,
+			d.created_at,
 			d.updated_at,
 			h.name as host_name,
 			h.hostname as host_hostname,
@@ -92,12 +92,12 @@ func (s *Server) GetDeployment(ctx *gin.Context) {
 
 	var d api.Deployment
 	err := s.db.QueryRow(`
-		SELECT 
-			d.id, 
-			d.host_id, 
-			d.package_id, 
-			d.status, 
-			d.created_at, 
+		SELECT
+			d.id,
+			d.host_id,
+			d.package_id,
+			d.status,
+			d.created_at,
 			d.updated_at,
 			h.name as host_name,
 			h.hostname as host_hostname,

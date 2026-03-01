@@ -27,5 +27,5 @@ DAOS (Deployment and Orchestration Service) is needed to automate deployment of 
 ## Impact
 
 - New repository: DAOS installer application
-- Dependencies: Go 1.21+, SQLite, bubbletea, Ansible (on target hosts)
+- Dependencies: Go 1.25+, SQLite, bubbletea, Ansible (on target hosts)
 - No breaking changes to existing systems (new project)

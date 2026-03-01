@@ -8,7 +8,7 @@ Version:        %{_version}
 Release:        1%{?dist}
 Summary:        DAOS - Deployment and Orchestration Service Daemon
 License:        Apache-2.0
-URL:            https://github.com/daos/daos
+URL:            https://github.com/Neraverin/daos
 BuildArch:      x86_64 aarch64
 
 Requires:       sqlite

@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/daos/daos/pkg/api"
-	"github.com/daos/daos/pkg/db"
+	"github.com/Neraverin/daos/pkg/api"
+	"github.com/Neraverin/daos/pkg/db"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )

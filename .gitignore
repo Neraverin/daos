@@ -33,3 +33,7 @@ go.work.sum
 
 # opencode
 .opencode
+
+# generated files
+pkg/db/*.sql.go
+pkg/api/*.gen.go

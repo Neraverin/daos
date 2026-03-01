@@ -8,10 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/daos/daos/pkg/api"
-	"github.com/daos/daos/pkg/config"
-	"github.com/daos/daos/pkg/db"
-	"github.com/daos/daos/cmd/daemon/handlers"
+	"github.com/Neraverin/daos/pkg/api"
+	"github.com/Neraverin/daos/pkg/config"
+	"github.com/Neraverin/daos/pkg/db"
+	"github.com/Neraverin/daos/cmd/daemon/handlers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,7 +47,7 @@ func main() {
 	api.RegisterHandlers(router, handlers.New(database))
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	
+
 	go func() {
 		log.Printf("Starting DAOS daemon on %s", addr)
 		if err := router.Run(addr); err != nil {

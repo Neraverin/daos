@@ -10,7 +10,7 @@ DAOS is a new installer service that provides:
 - No authentication required (localhost-trusted)
 
 ### Constraints
-- Go 1.21+ for both daemon and TUI
+- Go 1.25+ for both daemon and TUI
 - SQLite for persistent storage
 - bubbletea for TUI
 - OpenAPI 3 for API contracts

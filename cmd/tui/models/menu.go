@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/bubbletea/list"
+	"github.com/charmbracelet/bubbles/list"
 )
 
 type Menu struct {

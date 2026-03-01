@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/daos/daos/cmd/tui/models"
+	"github.com/Neraverin/daos/cmd/tui/models"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
