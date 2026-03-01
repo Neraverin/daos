@@ -40,3 +40,7 @@ pkg/api/*.gen.go
 
 # output files
 /bin
+
+# output packagets
+/packaging/deb/opt/daos
+/packaging/rpm/SOURCES

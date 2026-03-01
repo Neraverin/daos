@@ -39,20 +39,19 @@ generate-sql:
 	@go tool sqlc generate
 
 prepare-packaging:
-	mkdir -p packaging/deb/usr/bin
-	mkdir -p packaging/deb/etc/daos
+	mkdir -p packaging/deb/opt/daos
 	mkdir -p packaging/rpm/build
 	mkdir -p packaging/rpm/SOURCES
 
 deb: prepare-packaging
-	cp bin/daemon packaging/deb/usr/bin/
-	cp bin/tui packaging/deb/usr/bin/
-	dpkg-deb --build packaging/deb daos_${VERSION}_amd64.deb
+	cp bin/daemon packaging/deb/opt/daos
+	cp bin/tui packaging/deb/opt/daos
+	dpkg-deb --build packaging/deb bin/daos_${VERSION}_amd64.deb
 
 rpm: prepare-packaging
-	cp bin/daemon packaging/rpm/SOURCES/
-	cp bin/tui packaging/rpm/SOURCES/
-	rpmbuild -bb packaging/rpm/daos.spec --define "_version ${VERSION}"
+	cd packaging/rpm/SOURCES && tar -czvf ../SOURCES/daos-${VERSION}.tar.gz daemon tui
+	cd packaging/rpm && rpmbuild -bb daos.spec --define "_version ${VERSION}" --define "_topdir $(shell pwd)/packaging/rpm"
+	cp packaging/rpm/RPMS/x86_64/daos-${VERSION}-1.x86_64.rpm bin/
 
 help:
 	@echo "Available targets:"

@@ -1,0 +1,8 @@
+Package: daos
+Version: 0.1.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: DAOS Team
+Description: Deployment and Orchestration Service
+ A service for managing host deployments with Docker Compose packages.
