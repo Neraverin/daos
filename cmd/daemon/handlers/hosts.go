@@ -1,20 +1,21 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/Neraverin/daos/pkg/api"
 	"github.com/Neraverin/daos/pkg/db"
 	"github.com/gin-gonic/gin"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type Server struct {
-	db *db.DB
+	db     *db.Queries
+	dbRaw  *sql.DB
 }
 
-func New(database *db.DB) *Server {
-	return &Server{db: database}
+func New(database *sql.DB) *Server {
+	return &Server{db: db.New(database), dbRaw: database}
 }
 
 func (s *Server) HealthCheck(ctx *gin.Context) {
@@ -22,27 +23,21 @@ func (s *Server) HealthCheck(ctx *gin.Context) {
 }
 
 func (s *Server) ListHosts(ctx *gin.Context) {
-	rows, err := s.db.Query("SELECT id, name, hostname, port, username, ssh_key_path, created_at, updated_at FROM hosts ORDER BY name")
+	hosts, err := s.db.GetAllHosts(ctx)
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
-	defer rows.Close()
 
-	var hosts []api.Host
-	for rows.Next() {
-		var h api.Host
-		if err := rows.Scan(&h.ID, &h.Name, &h.Hostname, &h.Port, &h.Username, &h.SSHKeyPath, &h.CreatedAt, &h.UpdatedAt); err != nil {
-			api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
-			return
-		}
-		hosts = append(hosts, h)
+	var result []api.Host
+	for _, h := range hosts {
+		result = append(result, hostToAPI(h))
 	}
 
-	if hosts == nil {
-		hosts = []api.Host{}
+	if result == nil {
+		result = []api.Host{}
 	}
-	ctx.JSON(http.StatusOK, hosts)
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (s *Server) CreateHost(ctx *gin.Context) {
@@ -52,93 +47,83 @@ func (s *Server) CreateHost(ctx *gin.Context) {
 		return
 	}
 
-	port := 22
+	port := int64(22)
 	if input.Port != nil {
-		port = *input.Port
+		port = int64(*input.Port)
 	}
 
-	result, err := s.db.Exec(
-		"INSERT INTO hosts (name, hostname, port, username, ssh_key_path) VALUES (?, ?, ?, ?, ?)",
-		input.Name, input.Hostname, port, input.Username, input.SSHKeyPath,
-	)
+	h, err := s.db.CreateHost(ctx, db.CreateHostParams{
+		Name:       input.Name,
+		Hostname:   input.Hostname,
+		Port:       port,
+		Username:   input.Username,
+		SshKeyPath: input.SshKeyPath,
+	})
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	id, _ := result.LastInsertId()
-	s.GetHost(ctx, int(id))
+	ctx.JSON(http.StatusCreated, hostToAPI(h))
 }
 
-func (s *Server) GetHost(ctx *gin.Context) {
-	id, ok := api.GetIDParam(ctx)
-	if !ok {
-		api.ErrorJSON(ctx, http.StatusBadRequest, "invalid host id")
-		return
-	}
-
-	var h api.Host
-	err := s.db.QueryRow(
-		"SELECT id, name, hostname, port, username, ssh_key_path, created_at, updated_at FROM hosts WHERE id = ?",
-		id,
-	).Scan(&h.ID, &h.Name, &h.Hostname, &h.Port, &h.Username, &h.SSHKeyPath, &h.CreatedAt, &h.UpdatedAt)
-
+func (s *Server) GetHost(ctx *gin.Context, id int) {
+	h, err := s.db.GetHost(ctx, int64(id))
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "host not found")
 		return
 	}
 
-	ctx.JSON(http.StatusOK, h)
+	ctx.JSON(http.StatusOK, hostToAPI(h))
 }
 
-func (s *Server) UpdateHost(ctx *gin.Context) {
-	id, ok := api.GetIDParam(ctx)
-	if !ok {
-		api.ErrorJSON(ctx, http.StatusBadRequest, "invalid host id")
-		return
-	}
-
+func (s *Server) UpdateHost(ctx *gin.Context, id int) {
 	var input api.HostInput
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	port := 22
+	port := int64(22)
 	if input.Port != nil {
-		port = *input.Port
+		port = int64(*input.Port)
 	}
 
-	_, err := s.db.Exec(
-		"UPDATE hosts SET name = ?, hostname = ?, port = ?, username = ?, ssh_key_path = ?, updated_at = datetime('now') WHERE id = ?",
-		input.Name, input.Hostname, port, input.Username, input.SSHKeyPath, id,
-	)
+	_, err := s.db.UpdateHost(ctx, db.UpdateHostParams{
+		ID:         int64(id),
+		Name:       input.Name,
+		Hostname:   input.Hostname,
+		Port:       port,
+		Username:   input.Username,
+		SshKeyPath: input.SshKeyPath,
+	})
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	s.GetHost(ctx)
+	s.GetHost(ctx, id)
 }
 
-func (s *Server) DeleteHost(ctx *gin.Context) {
-	id, ok := api.GetIDParam(ctx)
-	if !ok {
-		api.ErrorJSON(ctx, http.StatusBadRequest, "invalid host id")
-		return
-	}
-
-	result, err := s.db.Exec("DELETE FROM hosts WHERE id = ?", id)
+func (s *Server) DeleteHost(ctx *gin.Context, id int) {
+	err := s.db.DeleteHost(ctx, int64(id))
 	if err != nil {
-		api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
 		api.ErrorJSON(ctx, http.StatusNotFound, "host not found")
 		return
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+func hostToAPI(h db.Host) api.Host {
+	return api.Host{
+		Id:         toPtr(int(h.ID)),
+		Name:       toPtr(h.Name),
+		Hostname:   toPtr(h.Hostname),
+		Port:       toPtr(int(h.Port)),
+		Username:   toPtr(h.Username),
+		SshKeyPath: toPtr(h.SshKeyPath),
+		CreatedAt:  parseTime(h.CreatedAt),
+		UpdatedAt:  parseTime(h.UpdatedAt),
+	}
 }

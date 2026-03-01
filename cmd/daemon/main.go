@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
@@ -10,8 +11,8 @@ import (
 
 	"github.com/Neraverin/daos/pkg/api"
 	"github.com/Neraverin/daos/pkg/config"
-	"github.com/Neraverin/daos/pkg/db"
 	"github.com/Neraverin/daos/cmd/daemon/handlers"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,7 +38,7 @@ func main() {
 		cfg = config.Default()
 	}
 
-	database, err := db.New(cfg.Database.Path)
+	database, err := sql.Open("sqlite3", cfg.Database.Path)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

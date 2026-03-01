@@ -4,31 +4,26 @@ import (
 	"net/http"
 
 	"github.com/Neraverin/daos/pkg/api"
+	"github.com/Neraverin/daos/pkg/db"
 	"github.com/gin-gonic/gin"
 )
 
 func (s *Server) ListPackages(ctx *gin.Context) {
-	rows, err := s.db.Query("SELECT id, name, created_at, updated_at FROM packages ORDER BY name")
+	packages, err := s.db.GetAllPackages(ctx)
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
-	defer rows.Close()
 
-	var packages []api.PackageSummary
-	for rows.Next() {
-		var p api.PackageSummary
-		if err := rows.Scan(&p.ID, &p.Name, &p.CreatedAt, &p.UpdatedAt); err != nil {
-			api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
-			return
-		}
-		packages = append(packages, p)
+	var result []api.PackageSummary
+	for _, p := range packages {
+		result = append(result, packageSummaryToAPI(p))
 	}
 
-	if packages == nil {
-		packages = []api.PackageSummary{}
+	if result == nil {
+		result = []api.PackageSummary{}
 	}
-	ctx.JSON(http.StatusOK, packages)
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (s *Server) CreatePackage(ctx *gin.Context) {
@@ -48,58 +43,53 @@ func (s *Server) CreatePackage(ctx *gin.Context) {
 		return
 	}
 
-	result, err := s.db.Exec(
-		"INSERT INTO packages (name, compose_content) VALUES (?, ?)",
-		input.Name, input.ComposeContent,
-	)
+	p, err := s.db.CreatePackage(ctx, db.CreatePackageParams{
+		Name:           input.Name,
+		ComposeContent: input.ComposeContent,
+	})
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	id, _ := result.LastInsertId()
-	s.GetPackage(ctx, int(id))
+	ctx.JSON(http.StatusCreated, packageToAPI(p))
 }
 
-func (s *Server) GetPackage(ctx *gin.Context) {
-	id, ok := api.GetIDParam(ctx)
-	if !ok {
-		api.ErrorJSON(ctx, http.StatusBadRequest, "invalid package id")
-		return
-	}
-
-	var p api.Package
-	err := s.db.QueryRow(
-		"SELECT id, name, compose_content, created_at, updated_at FROM packages WHERE id = ?",
-		id,
-	).Scan(&p.ID, &p.Name, &p.ComposeContent, &p.CreatedAt, &p.UpdatedAt)
-
+func (s *Server) GetPackage(ctx *gin.Context, id int) {
+	p, err := s.db.GetPackage(ctx, int64(id))
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "package not found")
 		return
 	}
 
-	ctx.JSON(http.StatusOK, p)
+	ctx.JSON(http.StatusOK, packageToAPI(p))
 }
 
-func (s *Server) DeletePackage(ctx *gin.Context) {
-	id, ok := api.GetIDParam(ctx)
-	if !ok {
-		api.ErrorJSON(ctx, http.StatusBadRequest, "invalid package id")
-		return
-	}
-
-	result, err := s.db.Exec("DELETE FROM packages WHERE id = ?", id)
+func (s *Server) DeletePackage(ctx *gin.Context, id int) {
+	err := s.db.DeletePackage(ctx, int64(id))
 	if err != nil {
-		api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
 		api.ErrorJSON(ctx, http.StatusNotFound, "package not found")
 		return
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+func packageToAPI(p db.Package) api.Package {
+	return api.Package{
+		Id:             toPtr(int(p.ID)),
+		Name:           toPtr(p.Name),
+		ComposeContent: toPtr(p.ComposeContent),
+		CreatedAt:      parseTime(p.CreatedAt),
+		UpdatedAt:      parseTime(p.UpdatedAt),
+	}
+}
+
+func packageSummaryToAPI(p db.GetAllPackagesRow) api.PackageSummary {
+	return api.PackageSummary{
+		Id:        toPtr(int(p.ID)),
+		Name:      toPtr(p.Name),
+		CreatedAt: parseTime(p.CreatedAt),
+		UpdatedAt: parseTime(p.UpdatedAt),
+	}
 }

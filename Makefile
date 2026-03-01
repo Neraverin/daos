@@ -32,7 +32,7 @@ install-dependencies:
 
 generate-api:
 	@echo "--- Generating OpenAPI server and types ---"
-	@go tool oapi-codegen --config=codegen.yaml docs/openapi.yaml
+	@go tool oapi-codegen -generate=types,gin-server,client -package=api -o pkg/api/openapi.gen.go docs/openapi.yaml
 
 generate-sql:
 	@echo "--- Generating sqlc ---"

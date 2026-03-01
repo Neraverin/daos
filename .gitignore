@@ -37,3 +37,6 @@ go.work.sum
 # generated files
 pkg/db/*.sql.go
 pkg/api/*.gen.go
+
+# output files
+/bin

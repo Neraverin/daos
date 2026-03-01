@@ -1,52 +1,31 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
-	"time"
 
 	"github.com/Neraverin/daos/pkg/api"
 	"github.com/Neraverin/daos/pkg/ansible"
-	"github.com/Neraverin/daos/pkg/models"
+	"github.com/Neraverin/daos/pkg/db"
 	"github.com/gin-gonic/gin"
 )
 
 func (s *Server) ListDeployments(ctx *gin.Context) {
-	rows, err := s.db.Query(`
-		SELECT
-			d.id,
-			d.host_id,
-			d.package_id,
-			d.status,
-			d.created_at,
-			d.updated_at,
-			h.name as host_name,
-			h.hostname as host_hostname,
-			p.name as package_name
-		FROM deployments d
-		JOIN hosts h ON d.host_id = h.id
-		JOIN packages p ON d.package_id = p.id
-		ORDER BY d.created_at DESC
-	`)
+	deployments, err := s.db.GetAllDeployments(ctx)
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
-	defer rows.Close()
 
-	var deployments []api.Deployment
-	for rows.Next() {
-		var d api.Deployment
-		if err := rows.Scan(&d.ID, &d.HostID, &d.PackageID, &d.Status, &d.CreatedAt, &d.UpdatedAt, &d.HostName, &d.HostHostname, &d.PackageName); err != nil {
-			api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
-			return
-		}
-		deployments = append(deployments, d)
+	var result []api.Deployment
+	for _, d := range deployments {
+		result = append(result, deploymentRowToAPI(d))
 	}
 
-	if deployments == nil {
-		deployments = []api.Deployment{}
+	if result == nil {
+		result = []api.Deployment{}
 	}
-	ctx.JSON(http.StatusOK, deployments)
+	ctx.JSON(http.StatusOK, result)
 }
 
 func (s *Server) CreateDeployment(ctx *gin.Context) {
@@ -56,81 +35,43 @@ func (s *Server) CreateDeployment(ctx *gin.Context) {
 		return
 	}
 
-	var hostCount int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM hosts WHERE id = ?", input.HostID).Scan(&hostCount)
-	if err != nil || hostCount == 0 {
+	_, err := s.db.GetHost(ctx, int64(input.HostId))
+	if err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, "host not found")
 		return
 	}
 
-	var packageCount int
-	err = s.db.QueryRow("SELECT COUNT(*) FROM packages WHERE id = ?", input.PackageID).Scan(&packageCount)
-	if err != nil || packageCount == 0 {
+	_, err = s.db.GetPackage(ctx, int64(input.PackageId))
+	if err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, "package not found")
 		return
 	}
 
-	result, err := s.db.Exec(
-		"INSERT INTO deployments (host_id, package_id, status) VALUES (?, ?, 'pending')",
-		input.HostID, input.PackageID,
-	)
+	d, err := s.db.CreateDeployment(ctx, db.CreateDeploymentParams{
+		HostID:    int64(input.HostId),
+		PackageID: int64(input.PackageId),
+	})
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	id, _ := result.LastInsertId()
-	s.GetDeployment(ctx, int(id))
+	ctx.JSON(http.StatusCreated, deploymentToAPI(d))
 }
 
-func (s *Server) GetDeployment(ctx *gin.Context) {
-	id, ok := api.GetIDParam(ctx)
-	if !ok {
-		api.ErrorJSON(ctx, http.StatusBadRequest, "invalid deployment id")
-		return
-	}
-
-	var d api.Deployment
-	err := s.db.QueryRow(`
-		SELECT
-			d.id,
-			d.host_id,
-			d.package_id,
-			d.status,
-			d.created_at,
-			d.updated_at,
-			h.name as host_name,
-			h.hostname as host_hostname,
-			p.name as package_name
-		FROM deployments d
-		JOIN hosts h ON d.host_id = h.id
-		JOIN packages p ON d.package_id = p.id
-		WHERE d.id = ?
-	`, id).Scan(&d.ID, &d.HostID, &d.PackageID, &d.Status, &d.CreatedAt, &d.UpdatedAt, &d.HostName, &d.HostHostname, &d.PackageName)
-
+func (s *Server) GetDeployment(ctx *gin.Context, id int) {
+	d, err := s.db.GetDeployment(ctx, int64(id))
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "deployment not found")
 		return
 	}
 
-	ctx.JSON(http.StatusOK, d)
+	ctx.JSON(http.StatusOK, deploymentGetRowToAPI(d))
 }
 
-func (s *Server) DeleteDeployment(ctx *gin.Context) {
-	id, ok := api.GetIDParam(ctx)
-	if !ok {
-		api.ErrorJSON(ctx, http.StatusBadRequest, "invalid deployment id")
-		return
-	}
-
-	result, err := s.db.Exec("DELETE FROM deployments WHERE id = ?", id)
+func (s *Server) DeleteDeployment(ctx *gin.Context, id int) {
+	err := s.db.DeleteDeployment(ctx, int64(id))
 	if err != nil {
-		api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
 		api.ErrorJSON(ctx, http.StatusNotFound, "deployment not found")
 		return
 	}
@@ -138,108 +79,170 @@ func (s *Server) DeleteDeployment(ctx *gin.Context) {
 	ctx.Status(http.StatusNoContent)
 }
 
-func (s *Server) RunDeployment(ctx *gin.Context) {
-	id, ok := api.GetIDParam(ctx)
-	if !ok {
-		api.ErrorJSON(ctx, http.StatusBadRequest, "invalid deployment id")
-		return
-	}
-
-	var status string
-	err := s.db.QueryRow("SELECT status FROM deployments WHERE id = ?", id).Scan(&status)
+func (s *Server) RunDeployment(ctx *gin.Context, id int) {
+	d, err := s.db.GetDeployment(ctx, int64(id))
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "deployment not found")
 		return
 	}
 
-	if status == models.DeploymentStatusRunning {
+	if d.Status == "running" {
 		api.ErrorJSON(ctx, http.StatusBadRequest, "deployment already in progress")
 		return
 	}
 
-	s.db.Exec("UPDATE deployments SET status = 'running', updated_at = ? WHERE id = ?", time.Now(), id)
+	_, err = s.db.UpdateDeploymentStatus(ctx, db.UpdateDeploymentStatusParams{
+		ID:     int64(id),
+		Status: "running",
+	})
+	if err != nil {
+		api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
 
-	go s.runAnsibleDeployment(id)
+	go s.runAnsibleDeployment(int64(id))
 
-	s.GetDeployment(ctx)
+	s.GetDeployment(ctx, id)
 }
 
-func (s *Server) runAnsibleDeployment(deploymentID int) {
-	var hostID, packageID int64
-	var hostname, username, sshKeyPath, composeContent string
+type deploymentDetails struct {
+	hostID        int64
+	packageID     int64
+	hostname      string
+	username      string
+	sshKeyPath    string
+	composeContent string
+}
 
-	err := s.db.QueryRow(`
+func (s *Server) getDeploymentDetails(deploymentID int64) (*deploymentDetails, error) {
+	rows, err := s.dbRaw.QueryContext(context.Background(), `
 		SELECT d.host_id, d.package_id, h.hostname, h.username, h.ssh_key_path, p.compose_content
 		FROM deployments d
 		JOIN hosts h ON d.host_id = h.id
 		JOIN packages p ON d.package_id = p.id
 		WHERE d.id = ?
-	`, deploymentID).Scan(&hostID, &packageID, &hostname, &username, &sshKeyPath, &composeContent)
+	`, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
+	var details deploymentDetails
+	for rows.Next() {
+		if err := rows.Scan(&details.hostID, &details.packageID, &details.hostname, &details.username, &details.sshKeyPath, &details.composeContent); err != nil {
+			return nil, err
+		}
+	}
+	return &details, rows.Err()
+}
+
+func (s *Server) runAnsibleDeployment(deploymentID int64) {
+	details, err := s.getDeploymentDetails(deploymentID)
 	if err != nil {
 		s.logMessage(deploymentID, "Failed to get deployment details: "+err.Error())
-		s.updateStatus(deploymentID, models.DeploymentStatusFailed)
+		s.updateStatus(deploymentID, "failed")
 		return
 	}
 
-	s.logMessage(deploymentID, "Starting deployment to "+hostname)
+	s.logMessage(deploymentID, "Starting deployment to "+details.hostname)
 
-	executor := ansible.NewExecutor(hostname, int(hostID), username, sshKeyPath, composeContent)
+	executor := ansible.NewExecutor(details.hostname, int(details.hostID), details.username, details.sshKeyPath, details.composeContent)
 	err = executor.Run(func(line string) {
 		s.logMessage(deploymentID, line)
 	})
 
 	if err != nil {
 		s.logMessage(deploymentID, "Deployment failed: "+err.Error())
-		s.updateStatus(deploymentID, models.DeploymentStatusFailed)
+		s.updateStatus(deploymentID, "failed")
 		return
 	}
 
 	s.logMessage(deploymentID, "Deployment completed successfully")
-	s.updateStatus(deploymentID, models.DeploymentStatusSuccess)
+	s.updateStatus(deploymentID, "success")
 }
 
-func (s *Server) logMessage(deploymentID int, message string) {
-	s.db.Exec("INSERT INTO logs (deployment_id, message) VALUES (?, ?)", deploymentID, message)
+func (s *Server) logMessage(deploymentID int64, message string) {
+	s.db.CreateLog(context.Background(), db.CreateLogParams{
+		DeploymentID: deploymentID,
+		Message:       message,
+	})
 }
 
-func (s *Server) updateStatus(deploymentID int, status string) {
-	s.db.Exec("UPDATE deployments SET status = ?, updated_at = ? WHERE id = ?", status, time.Now(), deploymentID)
+func (s *Server) updateStatus(deploymentID int64, status string) {
+	s.db.UpdateDeploymentStatus(context.Background(), db.UpdateDeploymentStatusParams{
+		ID:     deploymentID,
+		Status: status,
+	})
 }
 
-func (s *Server) GetDeploymentLogs(ctx *gin.Context) {
-	id, ok := api.GetIDParam(ctx)
-	if !ok {
-		api.ErrorJSON(ctx, http.StatusBadRequest, "invalid deployment id")
-		return
-	}
-
-	var count int
-	err := s.db.QueryRow("SELECT COUNT(*) FROM deployments WHERE id = ?", id).Scan(&count)
-	if err != nil || count == 0 {
+func (s *Server) GetDeploymentLogs(ctx *gin.Context, id int) {
+	_, err := s.db.GetDeployment(ctx, int64(id))
+	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "deployment not found")
 		return
 	}
 
-	rows, err := s.db.Query("SELECT id, deployment_id, timestamp, message FROM logs WHERE deployment_id = ? ORDER BY timestamp", id)
+	logs, err := s.db.GetLogsByDeployment(ctx, int64(id))
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
-	defer rows.Close()
 
-	var logs []api.Log
-	for rows.Next() {
-		var l api.Log
-		if err := rows.Scan(&l.ID, &l.DeploymentID, &l.Timestamp, &l.Message); err != nil {
-			api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
-			return
-		}
-		logs = append(logs, l)
+	var result []api.Log
+	for _, l := range logs {
+		result = append(result, logToAPI(l))
 	}
 
-	if logs == nil {
-		logs = []api.Log{}
+	if result == nil {
+		result = []api.Log{}
 	}
-	ctx.JSON(http.StatusOK, logs)
+	ctx.JSON(http.StatusOK, result)
+}
+
+func deploymentToAPI(d db.Deployment) api.Deployment {
+	return api.Deployment{
+		Id:        toPtr(int(d.ID)),
+		HostId:    toPtr(int(d.HostID)),
+		PackageId: toPtr(int(d.PackageID)),
+		Status:    toPtr(api.DeploymentStatus(d.Status)),
+		CreatedAt: parseTime(d.CreatedAt),
+		UpdatedAt: parseTime(d.UpdatedAt),
+	}
+}
+
+func deploymentRowToAPI(d db.GetAllDeploymentsRow) api.Deployment {
+	return api.Deployment{
+		Id:           toPtr(int(d.ID)),
+		HostId:       toPtr(int(d.HostID)),
+		PackageId:    toPtr(int(d.PackageID)),
+		Status:       toPtr(api.DeploymentStatus(d.Status)),
+		CreatedAt:    parseTime(d.CreatedAt),
+		UpdatedAt:    parseTime(d.UpdatedAt),
+		HostName:     toPtr(d.HostName),
+		HostHostname: toPtr(d.HostHostname),
+		PackageName:  toPtr(d.PackageName),
+	}
+}
+
+func deploymentGetRowToAPI(d db.GetDeploymentRow) api.Deployment {
+	return api.Deployment{
+		Id:           toPtr(int(d.ID)),
+		HostId:       toPtr(int(d.HostID)),
+		PackageId:    toPtr(int(d.PackageID)),
+		Status:       toPtr(api.DeploymentStatus(d.Status)),
+		CreatedAt:    parseTime(d.CreatedAt),
+		UpdatedAt:    parseTime(d.UpdatedAt),
+		HostName:     toPtr(d.HostName),
+		HostHostname: toPtr(d.HostHostname),
+		PackageName:  toPtr(d.PackageName),
+	}
+}
+
+func logToAPI(l db.Log) api.Log {
+	return api.Log{
+		Id:           toPtr(int(l.ID)),
+		DeploymentId: toPtr(int(l.DeploymentID)),
+		Timestamp:    parseTime(l.Timestamp),
+		Message:      toPtr(l.Message),
+	}
 }
