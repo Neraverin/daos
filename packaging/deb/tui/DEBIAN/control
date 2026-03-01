@@ -1,0 +1,9 @@
+Package: daos-tui
+Version: 0.1.0
+Section: admin
+Priority: optional
+Architecture: amd64 arm64
+Depends: sqlite3
+Maintainer: DAOS Team <team@daos.local>
+Description: DAOS - Deployment and Orchestration Service TUI
+ Terminal UI client for DAOS daemon.

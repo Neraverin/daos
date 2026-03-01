@@ -1,0 +1,16 @@
+[Unit]
+Description=DAOS - Deployment and Orchestration Service
+After=network.target
+
+[Service]
+Type=simple
+User=daos
+Group=daos
+ExecStart=/usr/bin/daos-daemon --config /etc/daos/daemon.yaml
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

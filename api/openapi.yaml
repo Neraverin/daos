@@ -1,0 +1,473 @@
+openapi: 3.0.3
+info:
+  title: DAOS API
+  description: Deployment and Orchestration Service API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+  /hosts:
+    get:
+      summary: List all hosts
+      operationId: listHosts
+      tags:
+        - Hosts
+      responses:
+        '200':
+          description: List of hosts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Host'
+    post:
+      summary: Create a new host
+      operationId: createHost
+      tags:
+        - Hosts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HostInput'
+      responses:
+        '201':
+          description: Host created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Host'
+        '400':
+          description: Invalid input
+  /hosts/{id}:
+    get:
+      summary: Get a host by ID
+      operationId: getHost
+      tags:
+        - Hosts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Host found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Host'
+        '404':
+          description: Host not found
+    put:
+      summary: Update a host
+      operationId: updateHost
+      tags:
+        - Hosts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HostInput'
+      responses:
+        '200':
+          description: Host updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Host'
+        '404':
+          description: Host not found
+    delete:
+      summary: Delete a host
+      operationId: deleteHost
+      tags:
+        - Hosts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Host deleted
+        '404':
+          description: Host not found
+  /packages:
+    get:
+      summary: List all packages
+      operationId: listPackages
+      tags:
+        - Packages
+      responses:
+        '200':
+          description: List of packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PackageSummary'
+    post:
+      summary: Create a new package
+      operationId: createPackage
+      tags:
+        - Packages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageInput'
+      responses:
+        '201':
+          description: Package created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Package'
+        '400':
+          description: Invalid input
+  /packages/{id}:
+    get:
+      summary: Get a package by ID
+      operationId: getPackage
+      tags:
+        - Packages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Package found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Package'
+        '404':
+          description: Package not found
+    delete:
+      summary: Delete a package
+      operationId: deletePackage
+      tags:
+        - Packages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Package deleted
+        '404':
+          description: Package not found
+  /deployments:
+    get:
+      summary: List all deployments
+      operationId: listDeployments
+      tags:
+        - Deployments
+      responses:
+        '200':
+          description: List of deployments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deployment'
+    post:
+      summary: Create a new deployment
+      operationId: createDeployment
+      tags:
+        - Deployments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentInput'
+      responses:
+        '201':
+          description: Deployment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '400':
+          description: Invalid input
+  /deployments/{id}:
+    get:
+      summary: Get a deployment by ID
+      operationId: getDeployment
+      tags:
+        - Deployments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deployment found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '404':
+          description: Deployment not found
+    delete:
+      summary: Delete a deployment
+      operationId: deleteDeployment
+      tags:
+        - Deployments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deployment deleted
+        '404':
+          description: Deployment not found
+  /deployments/{id}/run:
+    post:
+      summary: Run a deployment
+      operationId: runDeployment
+      tags:
+        - Deployments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deployment started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '400':
+          description: Deployment already running or not found
+  /deployments/{id}/logs:
+    get:
+      summary: Get deployment logs
+      operationId: getDeploymentLogs
+      tags:
+        - Logs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Log'
+        '404':
+          description: Deployment not found
+components:
+  schemas:
+    Host:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: web-server-1
+        hostname:
+          type: string
+          example: 192.168.1.100
+        port:
+          type: integer
+          example: 22
+        username:
+          type: string
+          example: root
+        ssh_key_path:
+          type: string
+          example: /home/user/.ssh/id_rsa
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    HostInput:
+      type: object
+      required:
+        - name
+        - hostname
+        - username
+        - ssh_key_path
+      properties:
+        name:
+          type: string
+          example: web-server-1
+        hostname:
+          type: string
+          example: 192.168.1.100
+        port:
+          type: integer
+          default: 22
+          example: 22
+        username:
+          type: string
+          example: root
+        ssh_key_path:
+          type: string
+          example: /home/user/.ssh/id_rsa
+    PackageSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: my-webapp
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Package:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: my-webapp
+        compose_content:
+          type: string
+          example: |
+            version: '3'
+            services:
+              web:
+                image: nginx
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PackageInput:
+      type: object
+      required:
+        - name
+        - compose_content
+      properties:
+        name:
+          type: string
+          example: my-webapp
+        compose_content:
+          type: string
+          example: |
+            version: '3'
+            services:
+              web:
+                image: nginx
+    Deployment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        host_id:
+          type: integer
+          example: 1
+        package_id:
+          type: integer
+          example: 1
+        status:
+          type: string
+          enum: [pending, running, success, failed]
+          example: pending
+        host_name:
+          type: string
+        host_hostname:
+          type: string
+        package_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    DeploymentInput:
+      type: object
+      required:
+        - host_id
+        - package_id
+      properties:
+        host_id:
+          type: integer
+          example: 1
+        package_id:
+          type: integer
+          example: 1
+    Log:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        deployment_id:
+          type: integer
+          example: 1
+        timestamp:
+          type: string
+          format: date-time
+        message:
+          type: string
+          example: Starting deployment...

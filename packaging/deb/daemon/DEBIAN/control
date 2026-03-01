@@ -1,0 +1,9 @@
+Package: daos-daemon
+Version: 0.1.0
+Section: admin
+Priority: optional
+Architecture: amd64 arm64
+Depends: sqlite3
+Maintainer: DAOS Team <team@daos.local>
+Description: DAOS - Deployment and Orchestration Service Daemon
+ REST API server for managing deployments via Ansible.
