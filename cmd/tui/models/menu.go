@@ -1,14 +1,12 @@
 package models
 
 import (
-	"fmt"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/list"
 )
 
 type Menu struct {
-	list *list.List
+	list list.Model
 }
 
 func NewMenu() Menu {
@@ -60,17 +58,3 @@ type menuItem struct {
 func (i menuItem) Title() string       { return i.title }
 func (i menuItem) Description() string  { return i.desc }
 func (i menuItem) FilterValue() string { return i.title }
-
-type MenuDelegate struct{}
-
-func (d MenuDelegate) Render(m *list.Model, sb *string, i list.Item) {
-	switch item := i.(type) {
-	case menuItem:
-		*sb += fmt.Sprintf("  %s\n", item.title)
-		*sb += fmt.Sprintf("     %s\n", item.desc)
-	}
-}
-
-func (d MenuDelegate) Height(*list.Model, int) int       { return 2 }
-func (d MenuDelegate) Spacing(*list.Model) int           { return 0 }
-func (d MenuDelegate) Update(*list.Model, *list.Msg)     {}

@@ -18,10 +18,10 @@ type PackageSummary struct {
 }
 
 type PackagesList struct {
-	list      *list.List
-	daemonURL  string
-	packages   []PackageSummary
-	status     string
+	list      list.Model
+	daemonURL string
+	packages  []PackageSummary
+	status    string
 }
 
 func NewPackagesList(daemonURL string) PackagesList {
@@ -79,8 +79,9 @@ func (m PackagesList) Update(msg tea.Msg) (PackagesList, tea.Cmd) {
 		}
 	}
 
-	m.list, _ = m.list.Update(msg)
-	return m, nil
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	return m, cmd
 }
 
 func (m PackagesList) View() string {

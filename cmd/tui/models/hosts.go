@@ -22,10 +22,10 @@ type Host struct {
 }
 
 type HostsList struct {
-	list     *list.List
-	daemonURL string
-	hosts    []Host
-	status   string
+	list       list.Model
+	daemonURL  string
+	hosts      []Host
+	status     string
 }
 
 func NewHostsList(daemonURL string) HostsList {
@@ -35,7 +35,7 @@ func NewHostsList(daemonURL string) HostsList {
 	l.SetFilteringEnabled(true)
 
 	h := HostsList{
-		list:     l,
+		list:      l,
 		daemonURL: daemonURL,
 	}
 
@@ -43,8 +43,6 @@ func NewHostsList(daemonURL string) HostsList {
 }
 
 func (m HostsList) Update(msg tea.Msg) (HostsList, tea.Cmd) {
-	var cmds []tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -87,8 +85,9 @@ func (m HostsList) Update(msg tea.Msg) (HostsList, tea.Cmd) {
 		}
 	}
 
-	m.list, _ = m.list.Update(msg)
-	return m, nil
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	return m, cmd
 }
 
 func (m HostsList) View() string {
@@ -135,9 +134,9 @@ func deleteHost(url string, hostID int) error {
 type hostItem Host
 
 func (i hostItem) Title() string       { return i.Name }
-func (i hostItem) Description() string  { return fmt.Sprintf("%s@%s:%d", i.Username, i.Hostname, i.Port) }
+func (i hostItem) Description() string { return fmt.Sprintf("%s@%s:%d", i.Username, i.Hostname, i.Port) }
 func (i hostItem) FilterValue() string  { return i.Name }
 
 type refreshHostsMsg struct{}
-type showHostFormMsg struct{ deleteHostMsg struct{ hostID int } }
+type showHostFormMsg struct{}
 type deleteHostMsg struct{ hostID int }

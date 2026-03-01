@@ -1,15 +1,18 @@
 package db
 
 import (
-	"testing"
+	"database/sql"
 	"os"
+	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func TestNew(t *testing.T) {
 	tmpFile := "/tmp/test_daos.db"
 	defer os.Remove(tmpFile)
 
-	db, err := New(tmpFile)
+	db, err := sql.Open("sqlite3", tmpFile)
 	if err != nil {
 		t.Fatalf("Failed to create database: %v", err)
 	}
@@ -24,7 +27,7 @@ func TestCreateAndQueryHost(t *testing.T) {
 	tmpFile := "/tmp/test_daos_host.db"
 	defer os.Remove(tmpFile)
 
-	db, err := New(tmpFile)
+	db, err := sql.Open("sqlite3", tmpFile)
 	if err != nil {
 		t.Fatalf("Failed to create database: %v", err)
 	}

@@ -11,22 +11,22 @@ import (
 )
 
 type Deployment struct {
-	ID             int       `json:"id"`
-	HostID         int       `json:"host_id"`
-	PackageID      int       `json:"package_id"`
-	Status         string    `json:"status"`
-	HostName       string    `json:"host_name"`
-	HostHostname   string    `json:"host_hostname"`
-	PackageName    string    `json:"package_name"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID           int       `json:"id"`
+	HostID       int       `json:"host_id"`
+	PackageID    int       `json:"package_id"`
+	Status       string    `json:"status"`
+	HostName     string    `json:"host_name"`
+	HostHostname string    `json:"host_hostname"`
+	PackageName  string    `json:"package_name"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type DeploymentsList struct {
-	list        *list.List
-	daemonURL    string
-	deployments  []Deployment
-	status       string
+	list        list.Model
+	daemonURL   string
+	deployments []Deployment
+	status      string
 }
 
 func NewDeploymentsList(daemonURL string) DeploymentsList {
@@ -120,8 +120,9 @@ func (m DeploymentsList) Update(msg tea.Msg) (DeploymentsList, tea.Cmd) {
 		}
 	}
 
-	m.list, _ = m.list.Update(msg)
-	return m, nil
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	return m, cmd
 }
 
 func (m DeploymentsList) View() string {
