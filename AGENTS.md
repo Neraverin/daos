@@ -28,7 +28,11 @@ go test -v ./...    # Same as above
 
 # Run a single test
 go test -v ./pkg/db/...          # Test specific package
-go test -v -run TestHealthCheck ./cmd/daemon/handlers/...  # Test specific function
+go test -v -run TestHealthCheck ./tests/daemon/...  # Test specific function
+
+# Run API integration tests
+go test -v ./tests/daemon/...    # All daemon API tests
+go test -v ./tests/daemon/hosts_api_test.go  # Hosts API tests only
 
 # Code generation
 make generate-api    # Generate Go types from OpenAPI spec (docs/openapi.yaml)
@@ -168,4 +172,6 @@ pkg/
     models/           # Domain models
 docs/
     openapi.yaml      # API specification
+tests/
+    daemon/           # Daemon API integration tests
 ```

@@ -9,11 +9,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Neraverin/daos/cmd/daemon/handlers"
 	"github.com/Neraverin/daos/pkg/api"
 	"github.com/Neraverin/daos/pkg/config"
-	"github.com/Neraverin/daos/cmd/daemon/handlers"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
@@ -46,6 +46,7 @@ func main() {
 
 	router := gin.Default()
 	api.RegisterHandlers(router, handlers.New(database))
+	router.StaticFile("/openapi.yaml", "docs/openapi.yaml")
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 
