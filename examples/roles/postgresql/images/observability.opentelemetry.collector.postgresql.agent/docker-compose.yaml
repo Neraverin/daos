@@ -1,0 +1,27 @@
+version: "3.6"
+
+services:
+    observability.opentelemetry.collector.agent:
+        read_only: true
+        env_file:
+            - "./config/default.env"
+            - "./config/custom.env"
+        image: ${REGISTRY}/observability.opentelemetry.collector:5.2.2
+        ports:
+            - "${COLLECTOR_AGENT_SYSLOG_UDP_PORT}:${COLLECTOR_AGENT_SYSLOG_UDP_PORT}/udp"
+            - "${COLLECTOR_AGENT_SYSLOG_TCP_PORT}:${COLLECTOR_AGENT_SYSLOG_TCP_PORT}"
+        volumes:
+            - ${SSL_CERT_PATH}/:/usr/local/share/microservice/certs:ro
+        tmpfs:
+            - /etc/otelcol-contrib:mode=777,uid=${DOCKER_UID},gid=${DOCKER_GID}
+            - /var/lib/observability/telemetry:mode=777,uid=${DOCKER_UID},gid=${DOCKER_GID}
+        container_name: ${CONTAINER_NAME}
+        restart: always
+        networks:
+            - collector
+        command: "--config /etc/otelcol-contrib/storage-postgres-agent-config.yaml"
+
+networks:
+    collector:
+        name: ${BACKEND_NETWORK}
+        driver: ${BACKEND_NETWORK_DRIVER}

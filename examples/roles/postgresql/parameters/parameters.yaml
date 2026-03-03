@@ -1,0 +1,54 @@
+external_parameters:
+    - Image:
+      Name: all
+      Parameters:
+          - Name: "DockerBindHost"
+            DependsOn: infrastructure
+          - Name: "DockerRegistry"
+            DependsOn: infrastructure
+          - Name: "HostAddress"
+            DependsOn: infrastructure
+          - Name: "SSLCertificatePemFileName"
+            DependsOn: infrastructure
+          - Name: "SSLKeyFileName"
+            DependsOn: infrastructure
+          - Name: "CACertificateFileName"
+            DependsOn: infrastructure
+          - Name: "Network"
+            DependsOn: infrastructure
+          - Name: "NetworkDriver"
+            DependsOn: infrastructure
+          - Name: "CollectorAgentContainerName"
+            DependsOn: otlp_collector
+          - Name: "CollectorAgentHttpPort"
+            DependsOn: otlp_collector
+          - Name: "CollectorAgentSyslogUdpPort"
+            DependsOn: otlp_collector
+parameters:
+    - Image:
+      Name: storage-postgres
+      Parameters:
+          - Name: "PgAdminPort"
+            Description: "Port for accessing pgAdmin"
+            DefaultValue: 9001
+            Type: integer
+            ConfigurationModes:
+                - Basic
+          - Name: "PgPort"
+            Description: "Port for accessing the PostgreSQL DBMS"
+            DefaultValue: 5432
+            Type: integer
+            ConfigurationModes:
+                - Basic
+          - Name: "PgUser"
+            Description: "Username of a service account for accessing the PostgreSQL DBMS"
+            DefaultValue: "pt_system"
+            Type: string
+            ConfigurationModes:
+                - System
+          - Name: "PgPassword"
+            Description: "Password of a service account for accessing the PostgreSQL DBMS"
+            DefaultValue: "P@ssw0rdP@ssw0rd"
+            Type: string
+            ConfigurationModes:
+                - Basic

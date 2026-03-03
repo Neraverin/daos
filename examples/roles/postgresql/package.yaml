@@ -1,0 +1,44 @@
+package:
+    TypeId: SqlStorage
+    Name: sqlstorage
+    Version: 101.20.18991
+    Description: SqlStorage
+    Images:
+        - Id: storage-postgres
+          TemplateFiles:
+              - config/default.env
+              - .env
+        - Id: storage-pgadmin
+          TemplateFiles:
+              - config/default.env
+              - .env
+        - Id: observability.opentelemetry.collector.postgresql.agent
+          TemplateFiles:
+              - config/default.env
+              - .env
+    Packages:
+        - docker-ce: ">=5:25.0.5-1~debian.10~buster"
+ImagesInfo:
+    storage-pgadmin:
+        Tag: 1.5.4
+        ImageReference: docker-core-release.ptsecurity.ru/storage-pgadmin:1.5.4
+    storage-postgres:
+        Tag: 4.0.4
+        ImageReference: docker-core-release.ptsecurity.ru/storage-postgres:4.0.4
+    observability.opentelemetry.collector:
+        Tag: 5.2.2
+        ImageReference: docker-core-release.ptsecurity.ru/observability.opentelemetry.collector:5.2.2
+definitions:
+    files:
+        - backup.sh
+        - probackup.sh
+        - restore.sh
+    folders:
+        - path: ./data
+        - path: ./log
+        - path: ./certs
+    certificates:
+        - path: ./certs/Portal.crt
+          keyPath: ./certs/Portal.key
+          type: pem
+    configs: []

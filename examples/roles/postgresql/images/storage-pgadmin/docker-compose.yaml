@@ -1,0 +1,27 @@
+version: "3.6"
+
+services:
+    storage-pgadmin:
+        read_only: true
+        env_file:
+            - "./config/default.env"
+            - "./config/custom.env"
+        image: ${REGISTRY}/storage-pgadmin:1.5.4
+        container_name: ${CONTAINER_NAME}
+        ports:
+            - "${PGADMIN_PORT}:443"
+        restart: always
+        networks:
+            - default
+        tmpfs:
+            - /pgadmin4/tmpfs:mode=777,uid=${DOCKER_UID},gid=${DOCKER_GID}
+            - /var/lib/pgadmin:mode=777,uid=${DOCKER_UID},gid=${DOCKER_GID}
+            - /tmp:mode=777,uid=${DOCKER_UID},gid=${DOCKER_GID}
+        volumes:
+            - ${PGADMIN_SSL_CERT_FILE}:/certs/server.cert:ro
+            - ${PGADMIN_SSL_KEY_FILE}:/certs/server.key:ro
+
+networks:
+    default:
+        name: ${NETWORK}
+        driver: ${NETWORK_DRIVER}
