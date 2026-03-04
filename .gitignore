@@ -8,6 +8,10 @@
 *.so
 *.dylib
 
+# Archives
+*.tar
+*.tar.gz
+
 # Test binary, built with `go test -c`
 *.test
 
