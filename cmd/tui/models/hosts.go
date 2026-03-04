@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/google/uuid"
 )
 
 type Host struct {
-	ID         int       `json:"id"`
+	ID         uuid.UUID `json:"id"`
 	Name       string    `json:"name"`
 	Hostname   string    `json:"hostname"`
 	Port       int       `json:"port"`
@@ -23,10 +24,10 @@ type Host struct {
 }
 
 type HostsList struct {
-	list       list.Model
-	daemonURL  string
-	hosts      []Host
-	status     string
+	list      list.Model
+	daemonURL string
+	hosts     []Host
+	status    string
 }
 
 func NewHostsList(daemonURL string) HostsList {
@@ -123,8 +124,8 @@ func fetchHosts(url string) ([]Host, error) {
 	return hosts, nil
 }
 
-func deleteHost(url string, hostID int) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/hosts/%d", url, hostID), nil)
+func deleteHost(url string, hostID uuid.UUID) error {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/hosts/%s", url, hostID.String()), nil)
 	if err != nil {
 		return err
 	}
@@ -140,10 +141,12 @@ func deleteHost(url string, hostID int) error {
 
 type hostItem Host
 
-func (i hostItem) Title() string       { return i.Name }
-func (i hostItem) Description() string { return fmt.Sprintf("%s@%s:%d", i.Username, i.Hostname, i.Port) }
-func (i hostItem) FilterValue() string  { return i.Name }
+func (i hostItem) Title() string { return i.Name }
+func (i hostItem) Description() string {
+	return fmt.Sprintf("%s@%s:%d", i.Username, i.Hostname, i.Port)
+}
+func (i hostItem) FilterValue() string { return i.Name }
 
 type refreshHostsMsg struct{}
 type showHostFormMsg struct{}
-type deleteHostMsg struct{ hostID int }
+type deleteHostMsg struct{ hostID uuid.UUID }

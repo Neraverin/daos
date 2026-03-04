@@ -6,15 +6,16 @@ import (
 	"net/http"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/google/uuid"
 )
 
 type Deployment struct {
-	ID           int       `json:"id"`
-	HostID       int       `json:"host_id"`
-	PackageID    int       `json:"package_id"`
+	ID           uuid.UUID `json:"id"`
+	HostID       uuid.UUID `json:"host_id"`
+	PackageID    uuid.UUID `json:"package_id"`
 	Status       string    `json:"status"`
 	HostName     string    `json:"host_name"`
 	HostHostname string    `json:"host_hostname"`
@@ -155,8 +156,8 @@ func fetchDeployments(url string) ([]Deployment, error) {
 	return deployments, nil
 }
 
-func runDeployment(url string, deploymentID int) error {
-	resp, err := http.Post(fmt.Sprintf("%s/deployments/%d/run", url, deploymentID), "application/json", nil)
+func runDeployment(url string, deploymentID uuid.UUID) error {
+	resp, err := http.Post(fmt.Sprintf("%s/deployments/%s/run", url, deploymentID.String()), "application/json", nil)
 	if err != nil {
 		return err
 	}
@@ -165,8 +166,8 @@ func runDeployment(url string, deploymentID int) error {
 	return nil
 }
 
-func deleteDeployment(url string, deploymentID int) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/deployments/%d", url, deploymentID), nil)
+func deleteDeployment(url string, deploymentID uuid.UUID) error {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/deployments/%s", url, deploymentID.String()), nil)
 	if err != nil {
 		return err
 	}
@@ -181,14 +182,14 @@ func deleteDeployment(url string, deploymentID int) error {
 }
 
 type DeploymentLog struct {
-	ID           int       `json:"id"`
-	DeploymentID int       `json:"deployment_id"`
+	ID           uuid.UUID `json:"id"`
+	DeploymentID uuid.UUID `json:"deployment_id"`
 	Timestamp    time.Time `json:"timestamp"`
 	Message      string    `json:"message"`
 }
 
-func fetchDeploymentLogs(url string, deploymentID int) ([]DeploymentLog, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/deployments/%d/logs", url, deploymentID))
+func fetchDeploymentLogs(url string, deploymentID uuid.UUID) ([]DeploymentLog, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/deployments/%s/logs", url, deploymentID.String()))
 	if err != nil {
 		return nil, err
 	}
@@ -208,12 +209,14 @@ func fetchDeploymentLogs(url string, deploymentID int) ([]DeploymentLog, error) 
 
 type deploymentItem Deployment
 
-func (i deploymentItem) Title() string       { return fmt.Sprintf("%s -> %s", i.PackageName, i.HostName) }
-func (i deploymentItem) Description() string { return fmt.Sprintf("Status: %s | %s", i.Status, i.UpdatedAt.Format("2006-01-02 15:04")) }
-func (i deploymentItem) FilterValue() string  { return i.PackageName + " " + i.HostName }
+func (i deploymentItem) Title() string { return fmt.Sprintf("%s -> %s", i.PackageName, i.HostName) }
+func (i deploymentItem) Description() string {
+	return fmt.Sprintf("Status: %s | %s", i.Status, i.UpdatedAt.Format("2006-01-02 15:04"))
+}
+func (i deploymentItem) FilterValue() string { return i.PackageName + " " + i.HostName }
 
 type refreshDeploymentsMsg struct{}
 type showDeploymentFormMsg struct{}
-type runDeploymentMsg struct{ deploymentID int }
-type deleteDeploymentMsg struct{ deploymentID int }
-type showLogsMsg struct{ deploymentID int }
+type runDeploymentMsg struct{ deploymentID uuid.UUID }
+type deleteDeploymentMsg struct{ deploymentID uuid.UUID }
+type showLogsMsg struct{ deploymentID uuid.UUID }

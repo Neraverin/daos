@@ -7,11 +7,12 @@ import (
 	"github.com/Neraverin/daos/pkg/api"
 	"github.com/Neraverin/daos/pkg/db"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type Server struct {
-	db     *db.Queries
-	dbRaw  *sql.DB
+	db    *db.Queries
+	dbRaw *sql.DB
 }
 
 func New(database *sql.DB) *Server {
@@ -52,7 +53,10 @@ func (s *Server) CreateHost(ctx *gin.Context) {
 		port = int64(*input.Port)
 	}
 
+	id := uuid.New().String()
+
 	h, err := s.db.CreateHost(ctx, db.CreateHostParams{
+		ID:         id,
 		Name:       input.Name,
 		Hostname:   input.Hostname,
 		Port:       port,
@@ -67,8 +71,8 @@ func (s *Server) CreateHost(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, hostToAPI(h))
 }
 
-func (s *Server) GetHost(ctx *gin.Context, id int) {
-	h, err := s.db.GetHost(ctx, int64(id))
+func (s *Server) GetHost(ctx *gin.Context, id uuid.UUID) {
+	h, err := s.db.GetHost(ctx, id.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "host not found")
 		return
@@ -77,7 +81,7 @@ func (s *Server) GetHost(ctx *gin.Context, id int) {
 	ctx.JSON(http.StatusOK, hostToAPI(h))
 }
 
-func (s *Server) UpdateHost(ctx *gin.Context, id int) {
+func (s *Server) UpdateHost(ctx *gin.Context, id uuid.UUID) {
 	var input api.HostInput
 	if err := ctx.ShouldBindJSON(&input); err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, err.Error())
@@ -90,7 +94,7 @@ func (s *Server) UpdateHost(ctx *gin.Context, id int) {
 	}
 
 	_, err := s.db.UpdateHost(ctx, db.UpdateHostParams{
-		ID:         int64(id),
+		ID:         id.String(),
 		Name:       input.Name,
 		Hostname:   input.Hostname,
 		Port:       port,
@@ -105,8 +109,8 @@ func (s *Server) UpdateHost(ctx *gin.Context, id int) {
 	s.GetHost(ctx, id)
 }
 
-func (s *Server) DeleteHost(ctx *gin.Context, id int) {
-	err := s.db.DeleteHost(ctx, int64(id))
+func (s *Server) DeleteHost(ctx *gin.Context, id uuid.UUID) {
+	err := s.db.DeleteHost(ctx, id.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "host not found")
 		return
@@ -116,13 +120,14 @@ func (s *Server) DeleteHost(ctx *gin.Context, id int) {
 }
 
 func hostToAPI(h db.Host) api.Host {
+	id, _ := uuid.Parse(h.ID)
 	return api.Host{
-		Id:         toPtr(int(h.ID)),
-		Name:       toPtr(h.Name),
-		Hostname:   toPtr(h.Hostname),
+		Id:         &id,
+		Name:       &h.Name,
+		Hostname:   &h.Hostname,
 		Port:       toPtr(int(h.Port)),
-		Username:   toPtr(h.Username),
-		SshKeyPath: toPtr(h.SshKeyPath),
+		Username:   &h.Username,
+		SshKeyPath: &h.SshKeyPath,
 		CreatedAt:  parseTime(h.CreatedAt),
 		UpdatedAt:  parseTime(h.UpdatedAt),
 	}

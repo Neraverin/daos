@@ -86,7 +86,11 @@ func TestGetPackageByID(t *testing.T) {
 	createW := httptest.NewRecorder()
 	ts.router.ServeHTTP(createW, createReq)
 
-	req, _ := http.NewRequest("GET", "/packages/1", nil)
+	var createdPkg map[string]interface{}
+	json.Unmarshal(createW.Body.Bytes(), &createdPkg)
+	packageID := createdPkg["id"].(string)
+
+	req, _ := http.NewRequest("GET", "/packages/"+packageID, nil)
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
 
@@ -97,8 +101,8 @@ func TestGetPackageByID(t *testing.T) {
 	var pkg map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &pkg)
 
-	if pkg["id"] != float64(1) {
-		t.Errorf("Expected id 1, got %v", pkg["id"])
+	if pkg["id"] != packageID {
+		t.Errorf("Expected id %s, got %v", packageID, pkg["id"])
 	}
 	if pkg["compose_content"] == nil {
 		t.Error("Expected compose_content to be present")
@@ -109,7 +113,7 @@ func TestGetPackageByIDNotFound(t *testing.T) {
 	ts := setupTestServer(t)
 	defer ts.close()
 
-	req, _ := http.NewRequest("GET", "/packages/999", nil)
+	req, _ := http.NewRequest("GET", "/packages/550e8400-e29b-41d4-a716-446655440000", nil)
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
 
@@ -128,7 +132,11 @@ func TestDeletePackage(t *testing.T) {
 	createW := httptest.NewRecorder()
 	ts.router.ServeHTTP(createW, createReq)
 
-	req, _ := http.NewRequest("DELETE", "/packages/1", nil)
+	var createdPkg map[string]interface{}
+	json.Unmarshal(createW.Body.Bytes(), &createdPkg)
+	packageID := createdPkg["id"].(string)
+
+	req, _ := http.NewRequest("DELETE", "/packages/"+packageID, nil)
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
 
@@ -136,7 +144,7 @@ func TestDeletePackage(t *testing.T) {
 		t.Errorf("Expected status 204, got %d", w.Code)
 	}
 
-	getReq, _ := http.NewRequest("GET", "/packages/1", nil)
+	getReq, _ := http.NewRequest("GET", "/packages/"+packageID, nil)
 	getW := httptest.NewRecorder()
 	ts.router.ServeHTTP(getW, getReq)
 
@@ -149,7 +157,7 @@ func TestDeletePackageNotFound(t *testing.T) {
 	ts := setupTestServer(t)
 	defer ts.close()
 
-	req, _ := http.NewRequest("DELETE", "/packages/999", nil)
+	req, _ := http.NewRequest("DELETE", "/packages/550e8400-e29b-41d4-a716-446655440000", nil)
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
 

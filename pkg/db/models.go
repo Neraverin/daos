@@ -5,16 +5,16 @@
 package db
 
 type Deployment struct {
-	ID        int64  `json:"id"`
-	HostID    int64  `json:"host_id"`
-	PackageID int64  `json:"package_id"`
+	ID        string `json:"id"`
+	HostID    string `json:"host_id"`
+	PackageID string `json:"package_id"`
 	Status    string `json:"status"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
 
 type Host struct {
-	ID         int64  `json:"id"`
+	ID         string `json:"id"`
 	Name       string `json:"name"`
 	Hostname   string `json:"hostname"`
 	Port       int64  `json:"port"`
@@ -25,14 +25,14 @@ type Host struct {
 }
 
 type Log struct {
-	ID           int64  `json:"id"`
-	DeploymentID int64  `json:"deployment_id"`
+	ID           string `json:"id"`
+	DeploymentID string `json:"deployment_id"`
 	Timestamp    string `json:"timestamp"`
 	Message      string `json:"message"`
 }
 
 type Package struct {
-	ID             int64  `json:"id"`
+	ID             string `json:"id"`
 	Name           string `json:"name"`
 	ComposeContent string `json:"compose_content"`
 	CreatedAt      string `json:"created_at"`

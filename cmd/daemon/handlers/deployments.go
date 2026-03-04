@@ -4,10 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Neraverin/daos/pkg/api"
 	"github.com/Neraverin/daos/pkg/ansible"
+	"github.com/Neraverin/daos/pkg/api"
 	"github.com/Neraverin/daos/pkg/db"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func (s *Server) ListDeployments(ctx *gin.Context) {
@@ -35,21 +36,24 @@ func (s *Server) CreateDeployment(ctx *gin.Context) {
 		return
 	}
 
-	_, err := s.db.GetHost(ctx, int64(input.HostId))
+	_, err := s.db.GetHost(ctx, input.HostId.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, "host not found")
 		return
 	}
 
-	_, err = s.db.GetPackage(ctx, int64(input.PackageId))
+	_, err = s.db.GetPackage(ctx, input.PackageId.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, "package not found")
 		return
 	}
 
+	id := uuid.New().String()
+
 	d, err := s.db.CreateDeployment(ctx, db.CreateDeploymentParams{
-		HostID:    int64(input.HostId),
-		PackageID: int64(input.PackageId),
+		ID:        id,
+		HostID:    input.HostId.String(),
+		PackageID: input.PackageId.String(),
 	})
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, err.Error())
@@ -59,8 +63,8 @@ func (s *Server) CreateDeployment(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, deploymentToAPI(d))
 }
 
-func (s *Server) GetDeployment(ctx *gin.Context, id int) {
-	d, err := s.db.GetDeployment(ctx, int64(id))
+func (s *Server) GetDeployment(ctx *gin.Context, id uuid.UUID) {
+	d, err := s.db.GetDeployment(ctx, id.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "deployment not found")
 		return
@@ -69,8 +73,8 @@ func (s *Server) GetDeployment(ctx *gin.Context, id int) {
 	ctx.JSON(http.StatusOK, deploymentGetRowToAPI(d))
 }
 
-func (s *Server) DeleteDeployment(ctx *gin.Context, id int) {
-	err := s.db.DeleteDeployment(ctx, int64(id))
+func (s *Server) DeleteDeployment(ctx *gin.Context, id uuid.UUID) {
+	err := s.db.DeleteDeployment(ctx, id.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "deployment not found")
 		return
@@ -79,8 +83,8 @@ func (s *Server) DeleteDeployment(ctx *gin.Context, id int) {
 	ctx.Status(http.StatusNoContent)
 }
 
-func (s *Server) RunDeployment(ctx *gin.Context, id int) {
-	d, err := s.db.GetDeployment(ctx, int64(id))
+func (s *Server) RunDeployment(ctx *gin.Context, id uuid.UUID) {
+	d, err := s.db.GetDeployment(ctx, id.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "deployment not found")
 		return
@@ -92,7 +96,7 @@ func (s *Server) RunDeployment(ctx *gin.Context, id int) {
 	}
 
 	_, err = s.db.UpdateDeploymentStatus(ctx, db.UpdateDeploymentStatusParams{
-		ID:     int64(id),
+		ID:     id.String(),
 		Status: "running",
 	})
 	if err != nil {
@@ -100,44 +104,38 @@ func (s *Server) RunDeployment(ctx *gin.Context, id int) {
 		return
 	}
 
-	go s.runAnsibleDeployment(int64(id))
+	go s.runAnsibleDeployment(id.String())
 
 	s.GetDeployment(ctx, id)
 }
 
 type deploymentDetails struct {
-	hostID        int64
-	packageID     int64
-	hostname      string
-	username      string
-	sshKeyPath    string
+	hostID         string
+	packageID      string
+	hostname       string
+	username       string
+	sshKeyPath     string
 	composeContent string
 }
 
-func (s *Server) getDeploymentDetails(deploymentID int64) (*deploymentDetails, error) {
-	rows, err := s.dbRaw.QueryContext(context.Background(), `
-		SELECT d.host_id, d.package_id, h.hostname, h.username, h.ssh_key_path, p.compose_content
-		FROM deployments d
-		JOIN hosts h ON d.host_id = h.id
-		JOIN packages p ON d.package_id = p.id
-		WHERE d.id = ?
-	`, deploymentID)
+func (s *Server) getDeploymentDetails(ctx context.Context, deploymentID string) (*deploymentDetails, error) {
+	details, err := s.db.GetDeploymentDetails(ctx, deploymentID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var details deploymentDetails
-	for rows.Next() {
-		if err := rows.Scan(&details.hostID, &details.packageID, &details.hostname, &details.username, &details.sshKeyPath, &details.composeContent); err != nil {
-			return nil, err
-		}
-	}
-	return &details, rows.Err()
+	return &deploymentDetails{
+		hostID:         details.HostID,
+		packageID:      details.PackageID,
+		hostname:       details.Hostname,
+		username:       details.Username,
+		sshKeyPath:     details.SshKeyPath,
+		composeContent: details.ComposeContent,
+	}, nil
 }
 
-func (s *Server) runAnsibleDeployment(deploymentID int64) {
-	details, err := s.getDeploymentDetails(deploymentID)
+func (s *Server) runAnsibleDeployment(deploymentID string) {
+	details, err := s.getDeploymentDetails(context.Background(), deploymentID)
 	if err != nil {
 		s.logMessage(deploymentID, "Failed to get deployment details: "+err.Error())
 		s.updateStatus(deploymentID, "failed")
@@ -146,7 +144,7 @@ func (s *Server) runAnsibleDeployment(deploymentID int64) {
 
 	s.logMessage(deploymentID, "Starting deployment to "+details.hostname)
 
-	executor := ansible.NewExecutor(details.hostname, int(details.hostID), details.username, details.sshKeyPath, details.composeContent)
+	executor := ansible.NewExecutor(details.hostname, 22, details.username, details.sshKeyPath, details.composeContent)
 	err = executor.Run(func(line string) {
 		s.logMessage(deploymentID, line)
 	})
@@ -161,28 +159,30 @@ func (s *Server) runAnsibleDeployment(deploymentID int64) {
 	s.updateStatus(deploymentID, "success")
 }
 
-func (s *Server) logMessage(deploymentID int64, message string) {
+func (s *Server) logMessage(deploymentID string, message string) {
+	id := uuid.New().String()
 	s.db.CreateLog(context.Background(), db.CreateLogParams{
+		ID:           id,
 		DeploymentID: deploymentID,
-		Message:       message,
+		Message:      message,
 	})
 }
 
-func (s *Server) updateStatus(deploymentID int64, status string) {
+func (s *Server) updateStatus(deploymentID string, status string) {
 	s.db.UpdateDeploymentStatus(context.Background(), db.UpdateDeploymentStatusParams{
 		ID:     deploymentID,
 		Status: status,
 	})
 }
 
-func (s *Server) GetDeploymentLogs(ctx *gin.Context, id int) {
-	_, err := s.db.GetDeployment(ctx, int64(id))
+func (s *Server) GetDeploymentLogs(ctx *gin.Context, id uuid.UUID) {
+	_, err := s.db.GetDeployment(ctx, id.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "deployment not found")
 		return
 	}
 
-	logs, err := s.db.GetLogsByDeployment(ctx, int64(id))
+	logs, err := s.db.GetLogsByDeployment(ctx, id.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -200,10 +200,13 @@ func (s *Server) GetDeploymentLogs(ctx *gin.Context, id int) {
 }
 
 func deploymentToAPI(d db.Deployment) api.Deployment {
+	parsedID, _ := uuid.Parse(d.ID)
+	parsedHostID, _ := uuid.Parse(d.HostID)
+	parsedPackageID, _ := uuid.Parse(d.PackageID)
 	return api.Deployment{
-		Id:        toPtr(int(d.ID)),
-		HostId:    toPtr(int(d.HostID)),
-		PackageId: toPtr(int(d.PackageID)),
+		Id:        &parsedID,
+		HostId:    &parsedHostID,
+		PackageId: &parsedPackageID,
 		Status:    toPtr(api.DeploymentStatus(d.Status)),
 		CreatedAt: parseTime(d.CreatedAt),
 		UpdatedAt: parseTime(d.UpdatedAt),
@@ -211,10 +214,13 @@ func deploymentToAPI(d db.Deployment) api.Deployment {
 }
 
 func deploymentRowToAPI(d db.GetAllDeploymentsRow) api.Deployment {
+	parsedID, _ := uuid.Parse(d.ID)
+	parsedHostID, _ := uuid.Parse(d.HostID)
+	parsedPackageID, _ := uuid.Parse(d.PackageID)
 	return api.Deployment{
-		Id:           toPtr(int(d.ID)),
-		HostId:       toPtr(int(d.HostID)),
-		PackageId:    toPtr(int(d.PackageID)),
+		Id:           &parsedID,
+		HostId:       &parsedHostID,
+		PackageId:    &parsedPackageID,
 		Status:       toPtr(api.DeploymentStatus(d.Status)),
 		CreatedAt:    parseTime(d.CreatedAt),
 		UpdatedAt:    parseTime(d.UpdatedAt),
@@ -225,10 +231,13 @@ func deploymentRowToAPI(d db.GetAllDeploymentsRow) api.Deployment {
 }
 
 func deploymentGetRowToAPI(d db.GetDeploymentRow) api.Deployment {
+	parsedID, _ := uuid.Parse(d.ID)
+	parsedHostID, _ := uuid.Parse(d.HostID)
+	parsedPackageID, _ := uuid.Parse(d.PackageID)
 	return api.Deployment{
-		Id:           toPtr(int(d.ID)),
-		HostId:       toPtr(int(d.HostID)),
-		PackageId:    toPtr(int(d.PackageID)),
+		Id:           &parsedID,
+		HostId:       &parsedHostID,
+		PackageId:    &parsedPackageID,
 		Status:       toPtr(api.DeploymentStatus(d.Status)),
 		CreatedAt:    parseTime(d.CreatedAt),
 		UpdatedAt:    parseTime(d.UpdatedAt),
@@ -239,9 +248,11 @@ func deploymentGetRowToAPI(d db.GetDeploymentRow) api.Deployment {
 }
 
 func logToAPI(l db.Log) api.Log {
+	parsedID, _ := uuid.Parse(l.ID)
+	parsedDeploymentID, _ := uuid.Parse(l.DeploymentID)
 	return api.Log{
-		Id:           toPtr(int(l.ID)),
-		DeploymentId: toPtr(int(l.DeploymentID)),
+		Id:           &parsedID,
+		DeploymentId: &parsedDeploymentID,
 		Timestamp:    parseTime(l.Timestamp),
 		Message:      toPtr(l.Message),
 	}

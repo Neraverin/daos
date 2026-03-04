@@ -31,8 +31,8 @@ JOIN packages p ON d.package_id = p.id
 WHERE d.id = ?;
 
 -- name: CreateDeployment :one
-INSERT INTO deployments (host_id, package_id, status)
-VALUES (?, ?, 'pending')
+INSERT INTO deployments (id, host_id, package_id, status)
+VALUES (?, ?, ?, 'pending')
 RETURNING id, host_id, package_id, status, created_at, updated_at;
 
 -- name: UpdateDeploymentStatus :one
@@ -42,3 +42,16 @@ RETURNING id, host_id, package_id, status, created_at, updated_at;
 
 -- name: DeleteDeployment :exec
 DELETE FROM deployments WHERE id = ?;
+
+-- name: GetDeploymentDetails :one
+SELECT 
+    d.host_id,
+    d.package_id,
+    h.hostname,
+    h.username,
+    h.ssh_key_path,
+    p.compose_content
+FROM deployments d
+JOIN hosts h ON d.host_id = h.id
+JOIN packages p ON d.package_id = p.id
+WHERE d.id = ?;

@@ -11,3 +11,18 @@ sql:
               emit_json_tags: true
               emit_interface: false
               emit_exact_table_names: false
+              overrides:
+                  - column: "hosts.id"
+                    go_type: "string"
+                  - column: "packages.id"
+                    go_type: "string"
+                  - column: "deployments.id"
+                    go_type: "string"
+                  - column: "deployments.host_id"
+                    go_type: "string"
+                  - column: "deployments.package_id"
+                    go_type: "string"
+                  - column: "logs.id"
+                    go_type: "string"
+                  - column: "logs.deployment_id"
+                    go_type: "string"

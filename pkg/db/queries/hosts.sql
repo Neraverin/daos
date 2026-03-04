@@ -5,8 +5,8 @@ SELECT id, name, hostname, port, username, ssh_key_path, created_at, updated_at 
 SELECT id, name, hostname, port, username, ssh_key_path, created_at, updated_at FROM hosts WHERE id = ?;
 
 -- name: CreateHost :one
-INSERT INTO hosts (name, hostname, port, username, ssh_key_path)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO hosts (id, name, hostname, port, username, ssh_key_path)
+VALUES (?, ?, ?, ?, ?, ?)
 RETURNING id, name, hostname, port, username, ssh_key_path, created_at, updated_at;
 
 -- name: UpdateHost :one

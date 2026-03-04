@@ -5,8 +5,8 @@ SELECT id, name, created_at, updated_at FROM packages ORDER BY name;
 SELECT id, name, compose_content, created_at, updated_at FROM packages WHERE id = ?;
 
 -- name: CreatePackage :one
-INSERT INTO packages (name, compose_content)
-VALUES (?, ?)
+INSERT INTO packages (id, name, compose_content)
+VALUES (?, ?, ?)
 RETURNING id, name, compose_content, created_at, updated_at;
 
 -- name: UpdatePackage :one

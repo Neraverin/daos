@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/google/uuid"
 )
 
 type PackageSummary struct {
-	ID        int       `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -114,8 +115,8 @@ func fetchPackages(url string) ([]PackageSummary, error) {
 	return packages, nil
 }
 
-func deletePackage(url string, packageID int) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/packages/%d", url, packageID), nil)
+func deletePackage(url string, packageID uuid.UUID) error {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/packages/%s", url, packageID.String()), nil)
 	if err != nil {
 		return err
 	}
@@ -131,10 +132,12 @@ func deletePackage(url string, packageID int) error {
 
 type packageItem PackageSummary
 
-func (i packageItem) Title() string       { return i.Name }
-func (i packageItem) Description() string { return fmt.Sprintf("Created: %s", i.CreatedAt.Format("2006-01-02 15:04")) }
+func (i packageItem) Title() string { return i.Name }
+func (i packageItem) Description() string {
+	return fmt.Sprintf("Created: %s", i.CreatedAt.Format("2006-01-02 15:04"))
+}
 func (i packageItem) FilterValue() string { return i.Name }
 
 type refreshPackagesMsg struct{}
 type showPackageFormMsg struct{}
-type deletePackageMsg struct{ packageID int }
+type deletePackageMsg struct{ packageID uuid.UUID }

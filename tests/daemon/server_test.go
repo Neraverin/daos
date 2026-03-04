@@ -45,7 +45,7 @@ func setupTestServer(t *testing.T) *testServer {
 	// Create tables inline
 	schema := `
 	CREATE TABLE IF NOT EXISTS hosts (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		id TEXT PRIMARY KEY,
 		name TEXT NOT NULL,
 		hostname TEXT NOT NULL,
 		port INTEGER NOT NULL DEFAULT 22,
@@ -55,16 +55,16 @@ func setupTestServer(t *testing.T) *testServer {
 		updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 	);
 	CREATE TABLE IF NOT EXISTS packages (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		id TEXT PRIMARY KEY,
 		name TEXT NOT NULL UNIQUE,
 		compose_content TEXT NOT NULL,
 		created_at TEXT NOT NULL DEFAULT (datetime('now')),
 		updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 	);
 	CREATE TABLE IF NOT EXISTS deployments (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		host_id INTEGER NOT NULL,
-		package_id INTEGER NOT NULL,
+		id TEXT PRIMARY KEY,
+		host_id TEXT NOT NULL,
+		package_id TEXT NOT NULL,
 		status TEXT NOT NULL DEFAULT 'pending',
 		created_at TEXT NOT NULL DEFAULT (datetime('now')),
 		updated_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -72,8 +72,8 @@ func setupTestServer(t *testing.T) *testServer {
 		FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE
 	);
 	CREATE TABLE IF NOT EXISTS logs (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		deployment_id INTEGER NOT NULL,
+		id TEXT PRIMARY KEY,
+		deployment_id TEXT NOT NULL,
 		timestamp TEXT NOT NULL DEFAULT (datetime('now')),
 		message TEXT NOT NULL,
 		FOREIGN KEY (deployment_id) REFERENCES deployments(id) ON DELETE CASCADE

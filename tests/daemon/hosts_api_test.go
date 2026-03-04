@@ -91,9 +91,9 @@ func TestGetHostByID(t *testing.T) {
 
 	var createdHost map[string]interface{}
 	json.Unmarshal(createW.Body.Bytes(), &createdHost)
-	hostID := int(createdHost["id"].(float64))
+	hostID := createdHost["id"].(string)
 
-	req, _ := http.NewRequest("GET", "/hosts/1", nil)
+	req, _ := http.NewRequest("GET", "/hosts/"+hostID, nil)
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
 
@@ -104,8 +104,8 @@ func TestGetHostByID(t *testing.T) {
 	var host map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &host)
 
-	if host["id"] != float64(hostID) {
-		t.Errorf("Expected id %d, got %v", hostID, host["id"])
+	if host["id"] != hostID {
+		t.Errorf("Expected id %s, got %v", hostID, host["id"])
 	}
 }
 
@@ -113,7 +113,7 @@ func TestGetHostByIDNotFound(t *testing.T) {
 	ts := setupTestServer(t)
 	defer ts.close()
 
-	req, _ := http.NewRequest("GET", "/hosts/999", nil)
+	req, _ := http.NewRequest("GET", "/hosts/550e8400-e29b-41d4-a716-446655440000", nil)
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
 
@@ -132,8 +132,12 @@ func TestUpdateHost(t *testing.T) {
 	createW := httptest.NewRecorder()
 	ts.router.ServeHTTP(createW, createReq)
 
+	var createdHost map[string]interface{}
+	json.Unmarshal(createW.Body.Bytes(), &createdHost)
+	hostID := createdHost["id"].(string)
+
 	updateBody := `{"name":"updated-server","hostname":"192.168.1.200","username":"admin","ssh_key_path":"/home/admin/.ssh/id_rsa"}`
-	req, _ := http.NewRequest("PUT", "/hosts/1", bytes.NewBufferString(updateBody))
+	req, _ := http.NewRequest("PUT", "/hosts/"+hostID, bytes.NewBufferString(updateBody))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
@@ -163,7 +167,11 @@ func TestDeleteHost(t *testing.T) {
 	createW := httptest.NewRecorder()
 	ts.router.ServeHTTP(createW, createReq)
 
-	req, _ := http.NewRequest("DELETE", "/hosts/1", nil)
+	var createdHost map[string]interface{}
+	json.Unmarshal(createW.Body.Bytes(), &createdHost)
+	hostID := createdHost["id"].(string)
+
+	req, _ := http.NewRequest("DELETE", "/hosts/"+hostID, nil)
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
 
@@ -171,7 +179,7 @@ func TestDeleteHost(t *testing.T) {
 		t.Errorf("Expected status 204, got %d", w.Code)
 	}
 
-	getReq, _ := http.NewRequest("GET", "/hosts/1", nil)
+	getReq, _ := http.NewRequest("GET", "/hosts/"+hostID, nil)
 	getW := httptest.NewRecorder()
 	ts.router.ServeHTTP(getW, getReq)
 
@@ -184,7 +192,7 @@ func TestDeleteHostNotFound(t *testing.T) {
 	ts := setupTestServer(t)
 	defer ts.close()
 
-	req, _ := http.NewRequest("DELETE", "/hosts/999", nil)
+	req, _ := http.NewRequest("DELETE", "/hosts/550e8400-e29b-41d4-a716-446655440000", nil)
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
 

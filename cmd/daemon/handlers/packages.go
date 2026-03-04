@@ -6,6 +6,7 @@ import (
 	"github.com/Neraverin/daos/pkg/api"
 	"github.com/Neraverin/daos/pkg/db"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func (s *Server) ListPackages(ctx *gin.Context) {
@@ -43,7 +44,10 @@ func (s *Server) CreatePackage(ctx *gin.Context) {
 		return
 	}
 
+	id := uuid.New().String()
+
 	p, err := s.db.CreatePackage(ctx, db.CreatePackageParams{
+		ID:             id,
 		Name:           input.Name,
 		ComposeContent: input.ComposeContent,
 	})
@@ -55,8 +59,8 @@ func (s *Server) CreatePackage(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, packageToAPI(p))
 }
 
-func (s *Server) GetPackage(ctx *gin.Context, id int) {
-	p, err := s.db.GetPackage(ctx, int64(id))
+func (s *Server) GetPackage(ctx *gin.Context, id uuid.UUID) {
+	p, err := s.db.GetPackage(ctx, id.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "package not found")
 		return
@@ -65,8 +69,8 @@ func (s *Server) GetPackage(ctx *gin.Context, id int) {
 	ctx.JSON(http.StatusOK, packageToAPI(p))
 }
 
-func (s *Server) DeletePackage(ctx *gin.Context, id int) {
-	err := s.db.DeletePackage(ctx, int64(id))
+func (s *Server) DeletePackage(ctx *gin.Context, id uuid.UUID) {
+	err := s.db.DeletePackage(ctx, id.String())
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusNotFound, "package not found")
 		return
@@ -76,19 +80,21 @@ func (s *Server) DeletePackage(ctx *gin.Context, id int) {
 }
 
 func packageToAPI(p db.Package) api.Package {
+	parsedID, _ := uuid.Parse(p.ID)
 	return api.Package{
-		Id:             toPtr(int(p.ID)),
-		Name:           toPtr(p.Name),
-		ComposeContent: toPtr(p.ComposeContent),
+		Id:             &parsedID,
+		Name:           &p.Name,
+		ComposeContent: &p.ComposeContent,
 		CreatedAt:      parseTime(p.CreatedAt),
 		UpdatedAt:      parseTime(p.UpdatedAt),
 	}
 }
 
 func packageSummaryToAPI(p db.GetAllPackagesRow) api.PackageSummary {
+	parsedID, _ := uuid.Parse(p.ID)
 	return api.PackageSummary{
-		Id:        toPtr(int(p.ID)),
-		Name:      toPtr(p.Name),
+		Id:        &parsedID,
+		Name:      &p.Name,
 		CreatedAt: parseTime(p.CreatedAt),
 		UpdatedAt: parseTime(p.UpdatedAt),
 	}

@@ -70,7 +70,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '200':
           description: Host found
@@ -90,7 +91,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -116,7 +118,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '204':
           description: Host deleted
@@ -168,7 +171,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '200':
           description: Package found
@@ -188,7 +192,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '204':
           description: Package deleted
@@ -240,7 +245,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '200':
           description: Deployment found
@@ -260,7 +266,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '204':
           description: Deployment deleted
@@ -277,7 +284,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '200':
           description: Deployment started
@@ -298,7 +306,8 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+            format: uuid
       responses:
         '200':
           description: List of log entries
@@ -316,8 +325,9 @@ components:
       type: object
       properties:
         id:
-          type: integer
-          example: 1
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
         name:
           type: string
           example: web-server-1
@@ -367,8 +377,9 @@ components:
       type: object
       properties:
         id:
-          type: integer
-          example: 1
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
         name:
           type: string
           example: my-webapp
@@ -382,8 +393,9 @@ components:
       type: object
       properties:
         id:
-          type: integer
-          example: 1
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
         name:
           type: string
           example: my-webapp
@@ -420,14 +432,17 @@ components:
       type: object
       properties:
         id:
-          type: integer
-          example: 1
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
         host_id:
-          type: integer
-          example: 1
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
         package_id:
-          type: integer
-          example: 1
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
         status:
           type: string
           enum: [pending, running, success, failed]
@@ -451,20 +466,24 @@ components:
         - package_id
       properties:
         host_id:
-          type: integer
-          example: 1
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
         package_id:
-          type: integer
-          example: 1
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
     Log:
       type: object
       properties:
         id:
-          type: integer
-          example: 1
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
         deployment_id:
-          type: integer
-          example: 1
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
         timestamp:
           type: string
           format: date-time
