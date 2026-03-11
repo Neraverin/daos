@@ -125,47 +125,47 @@ paths:
           description: Host deleted
         '404':
           description: Host not found
-  /packages:
+  /roles:
     get:
-      summary: List all packages
-      operationId: listPackages
+      summary: List all roles
+      operationId: listRoles
       tags:
-        - Packages
+        - Roles
       responses:
         '200':
-          description: List of packages
+          description: List of roles
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/PackageSummary'
+                  $ref: '#/components/schemas/RoleSummary'
     post:
-      summary: Create a new package
-      operationId: createPackage
+      summary: Create a new role
+      operationId: createRole
       tags:
-        - Packages
+        - Roles
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PackageInput'
+              $ref: '#/components/schemas/RoleInput'
       responses:
         '201':
-          description: Package created
+          description: Role created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Package'
+                $ref: '#/components/schemas/Role'
         '400':
           description: Invalid input
-  /packages/{id}:
+  /roles/{id}:
     get:
-      summary: Get a package by ID
-      operationId: getPackage
+      summary: Get a role by ID
+      operationId: getRole
       tags:
-        - Packages
+        - Roles
       parameters:
         - name: id
           in: path
@@ -175,18 +175,18 @@ paths:
             format: uuid
       responses:
         '200':
-          description: Package found
+          description: Role found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Package'
+                $ref: '#/components/schemas/Role'
         '404':
-          description: Package not found
+          description: Role not found
     delete:
-      summary: Delete a package
-      operationId: deletePackage
+      summary: Delete a role
+      operationId: deleteRole
       tags:
-        - Packages
+        - Roles
       parameters:
         - name: id
           in: path
@@ -196,9 +196,9 @@ paths:
             format: uuid
       responses:
         '204':
-          description: Package deleted
+          description: Role deleted
         '404':
-          description: Package not found
+          description: Role not found
   /deployments:
     get:
       summary: List all deployments
@@ -373,7 +373,7 @@ components:
         ssh_key_path:
           type: string
           example: /home/user/.ssh/id_rsa
-    PackageSummary:
+    RoleSummary:
       type: object
       properties:
         id:
@@ -389,7 +389,7 @@ components:
         updated_at:
           type: string
           format: date-time
-    Package:
+    Role:
       type: object
       properties:
         id:
@@ -412,7 +412,7 @@ components:
         updated_at:
           type: string
           format: date-time
-    PackageInput:
+    RoleInput:
       type: object
       required:
         - name
@@ -439,7 +439,7 @@ components:
           type: string
           format: uuid
           example: "550e8400-e29b-41d4-a716-446655440000"
-        package_id:
+        role_id:
           type: string
           format: uuid
           example: "550e8400-e29b-41d4-a716-446655440000"
@@ -451,7 +451,7 @@ components:
           type: string
         host_hostname:
           type: string
-        package_name:
+        role_name:
           type: string
         created_at:
           type: string
@@ -463,13 +463,13 @@ components:
       type: object
       required:
         - host_id
-        - package_id
+        - role_id
       properties:
         host_id:
           type: string
           format: uuid
           example: "550e8400-e29b-41d4-a716-446655440000"
-        package_id:
+        role_id:
           type: string
           format: uuid
           example: "550e8400-e29b-41d4-a716-446655440000"

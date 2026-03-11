@@ -12,21 +12,21 @@ import (
 	"github.com/google/uuid"
 )
 
-type PackageSummary struct {
+type RoleSummary struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type PackagesList struct {
+type RolesList struct {
 	list      list.Model
 	daemonURL string
-	packages  []PackageSummary
+	roles     []RoleSummary
 	status    string
 }
 
-func NewPackagesList(daemonURL string) PackagesList {
+func NewRolesList(daemonURL string) RolesList {
 	delegate := list.NewDefaultDelegate()
 	delegate.Styles.SelectedTitle = lipgloss.NewStyle().Foreground(lipgloss.Color("86")).Background(lipgloss.Color("235")).Bold(true)
 	delegate.Styles.SelectedDesc = lipgloss.NewStyle().Foreground(lipgloss.Color("86")).Background(lipgloss.Color("235"))
@@ -34,56 +34,56 @@ func NewPackagesList(daemonURL string) PackagesList {
 	delegate.Styles.NormalDesc = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
 
 	l := list.New(nil, delegate, 0, 0)
-	l.Title = "Packages"
+	l.Title = "Roles"
 	l.SetShowStatusBar(true)
 	l.SetFilteringEnabled(true)
 
-	p := PackagesList{
+	r := RolesList{
 		list:      l,
 		daemonURL: daemonURL,
 	}
 
-	return p
+	return r
 }
 
-func (m PackagesList) Update(msg tea.Msg) (PackagesList, tea.Cmd) {
+func (m RolesList) Update(msg tea.Msg) (RolesList, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "n":
-			return m, tea.Cmd(func() tea.Msg { return showPackageFormMsg{} })
+			return m, tea.Cmd(func() tea.Msg { return showRoleFormMsg{} })
 		case "d":
-			if len(m.packages) > 0 {
+			if len(m.roles) > 0 {
 				selected := m.list.Index()
-				if selected >= 0 && selected < len(m.packages) {
-					return m, tea.Cmd(func() tea.Msg { return deletePackageMsg{packageID: m.packages[selected].ID} })
+				if selected >= 0 && selected < len(m.roles) {
+					return m, tea.Cmd(func() tea.Msg { return deleteRoleMsg{roleID: m.roles[selected].ID} })
 				}
 			}
 		case "r":
-			return m, tea.Cmd(func() tea.Msg { return refreshPackagesMsg{} })
+			return m, tea.Cmd(func() tea.Msg { return refreshRolesMsg{} })
 		}
-	case refreshPackagesMsg:
-		pkgs, err := fetchPackages(m.daemonURL)
+	case refreshRolesMsg:
+		roles, err := fetchRoles(m.daemonURL)
 		if err != nil {
 			m.status = fmt.Sprintf("Error: %v", err)
 		} else {
-			m.packages = pkgs
-			m.status = fmt.Sprintf("%d packages", len(pkgs))
-			items := make([]list.Item, len(pkgs))
-			for i, p := range pkgs {
-				items[i] = packageItem(p)
+			m.roles = roles
+			m.status = fmt.Sprintf("%d roles", len(roles))
+			items := make([]list.Item, len(roles))
+			for i, r := range roles {
+				items[i] = roleItem(r)
 			}
 			m.list.SetItems(items)
 		}
-	case showPackageFormMsg:
-		m.status = "Press n to upload package, d to delete, r to refresh"
-	case deletePackageMsg:
-		err := deletePackage(m.daemonURL, msg.packageID)
+	case showRoleFormMsg:
+		m.status = "Press n to upload role, d to delete, r to refresh"
+	case deleteRoleMsg:
+		err := deleteRole(m.daemonURL, msg.roleID)
 		if err != nil {
 			m.status = fmt.Sprintf("Error: %v", err)
 		} else {
-			m.status = "Package deleted"
-			return m, tea.Cmd(func() tea.Msg { return refreshPackagesMsg{} })
+			m.status = "Role deleted"
+			return m, tea.Cmd(func() tea.Msg { return refreshRolesMsg{} })
 		}
 	}
 
@@ -92,12 +92,12 @@ func (m PackagesList) Update(msg tea.Msg) (PackagesList, tea.Cmd) {
 	return m, cmd
 }
 
-func (m PackagesList) View() string {
+func (m RolesList) View() string {
 	return m.list.View()
 }
 
-func fetchPackages(url string) ([]PackageSummary, error) {
-	resp, err := http.Get(url + "/packages")
+func fetchRoles(url string) ([]RoleSummary, error) {
+	resp, err := http.Get(url + "/roles")
 	if err != nil {
 		return nil, err
 	}
@@ -107,16 +107,16 @@ func fetchPackages(url string) ([]PackageSummary, error) {
 		return nil, fmt.Errorf("API returned status %d", resp.StatusCode)
 	}
 
-	var packages []PackageSummary
-	if err := json.NewDecoder(resp.Body).Decode(&packages); err != nil {
+	var roles []RoleSummary
+	if err := json.NewDecoder(resp.Body).Decode(&roles); err != nil {
 		return nil, err
 	}
 
-	return packages, nil
+	return roles, nil
 }
 
-func deletePackage(url string, packageID uuid.UUID) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/packages/%s", url, packageID.String()), nil)
+func deleteRole(url string, roleID uuid.UUID) error {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/roles/%s", url, roleID.String()), nil)
 	if err != nil {
 		return err
 	}
@@ -130,14 +130,14 @@ func deletePackage(url string, packageID uuid.UUID) error {
 	return nil
 }
 
-type packageItem PackageSummary
+type roleItem RoleSummary
 
-func (i packageItem) Title() string { return i.Name }
-func (i packageItem) Description() string {
+func (i roleItem) Title() string { return i.Name }
+func (i roleItem) Description() string {
 	return fmt.Sprintf("Created: %s", i.CreatedAt.Format("2006-01-02 15:04"))
 }
-func (i packageItem) FilterValue() string { return i.Name }
+func (i roleItem) FilterValue() string { return i.Name }
 
-type refreshPackagesMsg struct{}
-type showPackageFormMsg struct{}
-type deletePackageMsg struct{ packageID uuid.UUID }
+type refreshRolesMsg struct{}
+type showRoleFormMsg struct{}
+type deleteRoleMsg struct{ roleID uuid.UUID }

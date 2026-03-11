@@ -42,18 +42,18 @@ func (s *Server) CreateDeployment(ctx *gin.Context) {
 		return
 	}
 
-	_, err = s.db.GetPackage(ctx, input.PackageId.String())
+	_, err = s.db.GetRole(ctx, input.RoleId.String())
 	if err != nil {
-		api.ErrorJSON(ctx, http.StatusBadRequest, "package not found")
+		api.ErrorJSON(ctx, http.StatusBadRequest, "role not found")
 		return
 	}
 
 	id := uuid.New().String()
 
 	d, err := s.db.CreateDeployment(ctx, db.CreateDeploymentParams{
-		ID:        id,
-		HostID:    input.HostId.String(),
-		PackageID: input.PackageId.String(),
+		ID:     id,
+		HostID: input.HostId.String(),
+		RoleID: input.RoleId.String(),
 	})
 	if err != nil {
 		api.ErrorJSON(ctx, http.StatusBadRequest, err.Error())
@@ -111,7 +111,7 @@ func (s *Server) RunDeployment(ctx *gin.Context, id uuid.UUID) {
 
 type deploymentDetails struct {
 	hostID         string
-	packageID      string
+	roleID         string
 	hostname       string
 	username       string
 	sshKeyPath     string
@@ -126,7 +126,7 @@ func (s *Server) getDeploymentDetails(ctx context.Context, deploymentID string) 
 
 	return &deploymentDetails{
 		hostID:         details.HostID,
-		packageID:      details.PackageID,
+		roleID:         details.RoleID,
 		hostname:       details.Hostname,
 		username:       details.Username,
 		sshKeyPath:     details.SshKeyPath,
@@ -202,11 +202,11 @@ func (s *Server) GetDeploymentLogs(ctx *gin.Context, id uuid.UUID) {
 func deploymentToAPI(d db.Deployment) api.Deployment {
 	parsedID, _ := uuid.Parse(d.ID)
 	parsedHostID, _ := uuid.Parse(d.HostID)
-	parsedPackageID, _ := uuid.Parse(d.PackageID)
+	parsedRoleID, _ := uuid.Parse(d.RoleID)
 	return api.Deployment{
 		Id:        &parsedID,
 		HostId:    &parsedHostID,
-		PackageId: &parsedPackageID,
+		RoleId:    &parsedRoleID,
 		Status:    toPtr(api.DeploymentStatus(d.Status)),
 		CreatedAt: parseTime(d.CreatedAt),
 		UpdatedAt: parseTime(d.UpdatedAt),
@@ -216,34 +216,34 @@ func deploymentToAPI(d db.Deployment) api.Deployment {
 func deploymentRowToAPI(d db.GetAllDeploymentsRow) api.Deployment {
 	parsedID, _ := uuid.Parse(d.ID)
 	parsedHostID, _ := uuid.Parse(d.HostID)
-	parsedPackageID, _ := uuid.Parse(d.PackageID)
+	parsedRoleID, _ := uuid.Parse(d.RoleID)
 	return api.Deployment{
 		Id:           &parsedID,
 		HostId:       &parsedHostID,
-		PackageId:    &parsedPackageID,
+		RoleId:       &parsedRoleID,
 		Status:       toPtr(api.DeploymentStatus(d.Status)),
 		CreatedAt:    parseTime(d.CreatedAt),
 		UpdatedAt:    parseTime(d.UpdatedAt),
 		HostName:     toPtr(d.HostName),
 		HostHostname: toPtr(d.HostHostname),
-		PackageName:  toPtr(d.PackageName),
+		RoleName:     toPtr(d.RoleName),
 	}
 }
 
 func deploymentGetRowToAPI(d db.GetDeploymentRow) api.Deployment {
 	parsedID, _ := uuid.Parse(d.ID)
 	parsedHostID, _ := uuid.Parse(d.HostID)
-	parsedPackageID, _ := uuid.Parse(d.PackageID)
+	parsedRoleID, _ := uuid.Parse(d.RoleID)
 	return api.Deployment{
 		Id:           &parsedID,
 		HostId:       &parsedHostID,
-		PackageId:    &parsedPackageID,
+		RoleId:       &parsedRoleID,
 		Status:       toPtr(api.DeploymentStatus(d.Status)),
 		CreatedAt:    parseTime(d.CreatedAt),
 		UpdatedAt:    parseTime(d.UpdatedAt),
 		HostName:     toPtr(d.HostName),
 		HostHostname: toPtr(d.HostHostname),
-		PackageName:  toPtr(d.PackageName),
+		RoleName:     toPtr(d.RoleName),
 	}
 }
 

@@ -7,7 +7,7 @@ package db
 type Deployment struct {
 	ID        string `json:"id"`
 	HostID    string `json:"host_id"`
-	PackageID string `json:"package_id"`
+	RoleID    string `json:"role_id"`
 	Status    string `json:"status"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
@@ -31,7 +31,7 @@ type Log struct {
 	Message      string `json:"message"`
 }
 
-type Package struct {
+type Role struct {
 	ID             string `json:"id"`
 	Name           string `json:"name"`
 	ComposeContent string `json:"compose_content"`

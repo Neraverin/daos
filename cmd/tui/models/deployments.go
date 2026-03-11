@@ -15,11 +15,11 @@ import (
 type Deployment struct {
 	ID           uuid.UUID `json:"id"`
 	HostID       uuid.UUID `json:"host_id"`
-	PackageID    uuid.UUID `json:"package_id"`
+	RoleID       uuid.UUID `json:"role_id"`
 	Status       string    `json:"status"`
 	HostName     string    `json:"host_name"`
 	HostHostname string    `json:"host_hostname"`
-	PackageName  string    `json:"package_name"`
+	RoleName     string    `json:"role_name"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
@@ -209,11 +209,11 @@ func fetchDeploymentLogs(url string, deploymentID uuid.UUID) ([]DeploymentLog, e
 
 type deploymentItem Deployment
 
-func (i deploymentItem) Title() string { return fmt.Sprintf("%s -> %s", i.PackageName, i.HostName) }
+func (i deploymentItem) Title() string { return fmt.Sprintf("%s -> %s", i.RoleName, i.HostName) }
 func (i deploymentItem) Description() string {
 	return fmt.Sprintf("Status: %s | %s", i.Status, i.UpdatedAt.Format("2006-01-02 15:04"))
 }
-func (i deploymentItem) FilterValue() string { return i.PackageName + " " + i.HostName }
+func (i deploymentItem) FilterValue() string { return i.RoleName + " " + i.HostName }
 
 type refreshDeploymentsMsg struct{}
 type showDeploymentFormMsg struct{}

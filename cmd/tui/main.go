@@ -20,11 +20,11 @@ var (
 )
 
 type model struct {
-	menu    models.Menu
-	hosts   models.HostsList
-	packages models.PackagesList
+	menu        models.Menu
+	hosts       models.HostsList
+	roles       models.RolesList
 	deployments models.DeploymentsList
-	current    string
+	current     string
 }
 
 func initialModel() model {
@@ -33,11 +33,11 @@ func initialModel() model {
 		daemonURL = "http://localhost:8080/api/v1"
 	}
 	return model{
-		menu:       models.NewMenu(),
-		hosts:      models.NewHostsList(daemonURL),
-		packages:   models.NewPackagesList(daemonURL),
+		menu:        models.NewMenu(),
+		hosts:       models.NewHostsList(daemonURL),
+		roles:       models.NewRolesList(daemonURL),
 		deployments: models.NewDeploymentsList(daemonURL),
-		current:    "menu",
+		current:     "menu",
 	}
 }
 
@@ -64,8 +64,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.menu, cmd = m.menu.Update(msg)
 	case "hosts":
 		m.hosts, cmd = m.hosts.Update(msg)
-	case "packages":
-		m.packages, cmd = m.packages.Update(msg)
+	case "roles":
+		m.roles, cmd = m.roles.Update(msg)
 	case "deployments":
 		m.deployments, cmd = m.deployments.Update(msg)
 	}
@@ -81,8 +81,8 @@ func (m model) View() string {
 		s = m.menu.View()
 	case "hosts":
 		s = m.hosts.View()
-	case "packages":
-		s = m.packages.View()
+	case "roles":
+		s = m.roles.View()
 	case "deployments":
 		s = m.deployments.View()
 	default:

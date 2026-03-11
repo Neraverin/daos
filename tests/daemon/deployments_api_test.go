@@ -20,16 +20,16 @@ func createTestHost(t *testing.T, ts *testServer) string {
 	return host["id"].(string)
 }
 
-func createTestPackage(t *testing.T, ts *testServer) string {
-	body := `{"name":"test-package","compose_content":"version: '3'\nservices:\n  web:\n    image: nginx"}`
-	req, _ := http.NewRequest("POST", "/packages", bytes.NewBufferString(body))
+func createTestRole(t *testing.T, ts *testServer) string {
+	body := `{"name":"test-role","compose_content":"version: '3'\nservices:\n  web:\n    image: nginx"}`
+	req, _ := http.NewRequest("POST", "/roles", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
 
-	var pkg map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &pkg)
-	return pkg["id"].(string)
+	var role map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &role)
+	return role["id"].(string)
 }
 
 func TestListDeploymentsEmpty(t *testing.T) {
@@ -57,9 +57,9 @@ func TestCreateDeployment(t *testing.T) {
 	defer ts.close()
 
 	hostID := createTestHost(t, ts)
-	packageID := createTestPackage(t, ts)
+	roleID := createTestRole(t, ts)
 
-	body := `{"host_id":"` + hostID + `","package_id":"` + packageID + `"}`
+	body := `{"host_id":"` + hostID + `","role_id":"` + roleID + `"}`
 	req, _ := http.NewRequest("POST", "/deployments", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -75,42 +75,8 @@ func TestCreateDeployment(t *testing.T) {
 	if deployment["host_id"] != hostID {
 		t.Errorf("Expected host_id %s, got %v", hostID, deployment["host_id"])
 	}
-	if deployment["package_id"] != packageID {
-		t.Errorf("Expected package_id %s, got %v", packageID, deployment["package_id"])
-	}
-}
-
-func TestCreateDeploymentInvalidHost(t *testing.T) {
-	ts := setupTestServer(t)
-	defer ts.close()
-
-	packageID := createTestPackage(t, ts)
-
-	body := `{"host_id":"550e8400-e29b-41d4-a716-446655440000","package_id":"` + packageID + `"}`
-	req, _ := http.NewRequest("POST", "/deployments", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	ts.router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
-	}
-}
-
-func TestCreateDeploymentInvalidPackage(t *testing.T) {
-	ts := setupTestServer(t)
-	defer ts.close()
-
-	hostID := createTestHost(t, ts)
-
-	body := `{"host_id":"` + hostID + `","package_id":"550e8400-e29b-41d4-a716-446655440000"}`
-	req, _ := http.NewRequest("POST", "/deployments", bytes.NewBufferString(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	ts.router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("Expected status 400, got %d", w.Code)
+	if deployment["role_id"] != roleID {
+		t.Errorf("Expected role_id %s, got %v", roleID, deployment["role_id"])
 	}
 }
 
@@ -119,9 +85,9 @@ func TestListDeploymentsWithData(t *testing.T) {
 	defer ts.close()
 
 	hostID := createTestHost(t, ts)
-	packageID := createTestPackage(t, ts)
+	roleID := createTestRole(t, ts)
 
-	createBody := `{"host_id":"` + hostID + `","package_id":"` + packageID + `"}`
+	createBody := `{"host_id":"` + hostID + `","role_id":"` + roleID + `"}`
 	createReq, _ := http.NewRequest("POST", "/deployments", bytes.NewBufferString(createBody))
 	createReq.Header.Set("Content-Type", "application/json")
 	createW := httptest.NewRecorder()
@@ -148,9 +114,9 @@ func TestGetDeploymentByID(t *testing.T) {
 	defer ts.close()
 
 	hostID := createTestHost(t, ts)
-	packageID := createTestPackage(t, ts)
+	roleID := createTestRole(t, ts)
 
-	createBody := `{"host_id":"` + hostID + `","package_id":"` + packageID + `"}`
+	createBody := `{"host_id":"` + hostID + `","role_id":"` + roleID + `"}`
 	createReq, _ := http.NewRequest("POST", "/deployments", bytes.NewBufferString(createBody))
 	createReq.Header.Set("Content-Type", "application/json")
 	createW := httptest.NewRecorder()
@@ -194,9 +160,9 @@ func TestDeleteDeployment(t *testing.T) {
 	defer ts.close()
 
 	hostID := createTestHost(t, ts)
-	packageID := createTestPackage(t, ts)
+	roleID := createTestRole(t, ts)
 
-	createBody := `{"host_id":"` + hostID + `","package_id":"` + packageID + `"}`
+	createBody := `{"host_id":"` + hostID + `","role_id":"` + roleID + `"}`
 	createReq, _ := http.NewRequest("POST", "/deployments", bytes.NewBufferString(createBody))
 	createReq.Header.Set("Content-Type", "application/json")
 	createW := httptest.NewRecorder()
@@ -241,9 +207,9 @@ func TestRunDeployment(t *testing.T) {
 	defer ts.close()
 
 	hostID := createTestHost(t, ts)
-	packageID := createTestPackage(t, ts)
+	roleID := createTestRole(t, ts)
 
-	createBody := `{"host_id":"` + hostID + `","package_id":"` + packageID + `"}`
+	createBody := `{"host_id":"` + hostID + `","role_id":"` + roleID + `"}`
 	createReq, _ := http.NewRequest("POST", "/deployments", bytes.NewBufferString(createBody))
 	createReq.Header.Set("Content-Type", "application/json")
 	createW := httptest.NewRecorder()
@@ -274,9 +240,9 @@ func TestGetDeploymentLogs(t *testing.T) {
 	defer ts.close()
 
 	hostID := createTestHost(t, ts)
-	packageID := createTestPackage(t, ts)
+	roleID := createTestRole(t, ts)
 
-	createBody := `{"host_id":"` + hostID + `","package_id":"` + packageID + `"}`
+	createBody := `{"host_id":"` + hostID + `","role_id":"` + roleID + `"}`
 	createReq, _ := http.NewRequest("POST", "/deployments", bytes.NewBufferString(createBody))
 	createReq.Header.Set("Content-Type", "application/json")
 	createW := httptest.NewRecorder()

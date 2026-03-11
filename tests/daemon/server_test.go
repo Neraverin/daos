@@ -54,7 +54,7 @@ func setupTestServer(t *testing.T) *testServer {
 		created_at TEXT NOT NULL DEFAULT (datetime('now')),
 		updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 	);
-	CREATE TABLE IF NOT EXISTS packages (
+	CREATE TABLE IF NOT EXISTS roles (
 		id TEXT PRIMARY KEY,
 		name TEXT NOT NULL UNIQUE,
 		compose_content TEXT NOT NULL,
@@ -64,12 +64,12 @@ func setupTestServer(t *testing.T) *testServer {
 	CREATE TABLE IF NOT EXISTS deployments (
 		id TEXT PRIMARY KEY,
 		host_id TEXT NOT NULL,
-		package_id TEXT NOT NULL,
+		role_id TEXT NOT NULL,
 		status TEXT NOT NULL DEFAULT 'pending',
 		created_at TEXT NOT NULL DEFAULT (datetime('now')),
 		updated_at TEXT NOT NULL DEFAULT (datetime('now')),
 		FOREIGN KEY (host_id) REFERENCES hosts(id) ON DELETE CASCADE,
-		FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE
+		FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 	);
 	CREATE TABLE IF NOT EXISTS logs (
 		id TEXT PRIMARY KEY,

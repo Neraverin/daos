@@ -1,8 +1,8 @@
 package models
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -13,7 +13,7 @@ type Menu struct {
 func NewMenu() Menu {
 	items := []list.Item{
 		menuItem{title: "Hosts", desc: "Manage remote hosts"},
-		menuItem{title: "Packages", desc: "Manage Docker Compose packages"},
+		menuItem{title: "Roles", desc: "Manage Docker Compose roles"},
 		menuItem{title: "Deployments", desc: "Manage deployments"},
 		menuItem{title: "Quit", desc: "Exit application"},
 	}
@@ -54,8 +54,8 @@ func (m Menu) SelectedItem() (string, int) {
 		switch i.title {
 		case "Hosts":
 			return "hosts", 0
-		case "Packages":
-			return "packages", 0
+		case "Roles":
+			return "roles", 0
 		case "Deployments":
 			return "deployments", 0
 		case "Quit":
@@ -70,5 +70,5 @@ type menuItem struct {
 }
 
 func (i menuItem) Title() string       { return i.title }
-func (i menuItem) Description() string  { return i.desc }
+func (i menuItem) Description() string { return i.desc }
 func (i menuItem) FilterValue() string { return i.title }

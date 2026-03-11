@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS hosts (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Create packages table with UUID
-CREATE TABLE IF NOT EXISTS packages (
+-- Create roles table with UUID
+CREATE TABLE IF NOT EXISTS roles (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
     compose_content TEXT NOT NULL,
@@ -24,12 +24,12 @@ CREATE TABLE IF NOT EXISTS packages (
 CREATE TABLE IF NOT EXISTS deployments (
     id TEXT PRIMARY KEY,
     host_id TEXT NOT NULL,
-    package_id TEXT NOT NULL,
+    role_id TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (host_id) REFERENCES hosts(id) ON DELETE CASCADE,
-    FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 );
 
 -- Create logs table with UUID
@@ -44,5 +44,5 @@ CREATE TABLE IF NOT EXISTS logs (
 -- +migrate Down
 DROP TABLE IF EXISTS logs;
 DROP TABLE IF EXISTS deployments;
-DROP TABLE IF EXISTS packages;
+DROP TABLE IF EXISTS roles;
 DROP TABLE IF EXISTS hosts;
