@@ -199,6 +199,38 @@ paths:
           description: Role deleted
         '404':
           description: Role not found
+  /validate/role:
+    post:
+      summary: Validate a role YAML
+      operationId: validateRole
+      tags:
+        - Validation
+      requestBody:
+        required: true
+        content:
+          application/x-yaml:
+            schema:
+              type: string
+              example: |
+                Version: v2
+                Role:
+                  TypeId: SqlStorage
+                  Name: sqlstorage
+                  Version: 101.20.18991
+                  Description: SqlStorage
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
   /deployments:
     get:
       summary: List all deployments
@@ -482,3 +514,22 @@ components:
         message:
           type: string
           example: Starting deployment...
+    ValidationResult:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          example: true
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    ValidationError:
+      type: object
+      properties:
+        field:
+          type: string
+          example: Role.TypeId
+        message:
+          type: string
+          example: Role.TypeId is required

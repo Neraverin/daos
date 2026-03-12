@@ -4,8 +4,8 @@ Role:
     Name: sqlstorage
     Version: 101.20.18991
     Description: SqlStorage
-    ImageFile: "images/SqlStorage_101.20.18991.tar"
     Definitions:
+        ImageFile: "images/SqlStorage_101.20.18991.tar"
         Images:
             - Id: storage-postgres
             - Id: storage-pgadmin
