@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -21,11 +22,22 @@ func createTestHost(t *testing.T, ts *testServer) string {
 }
 
 func createTestRole(t *testing.T, ts *testServer) string {
-	body := `{"name":"test-role","compose_content":"version: '3'\nservices:\n  web:\n    image: nginx"}`
+	tmpDir := t.TempDir()
+	composeContent := "version: '3'\nservices:\n  web:\n    image: nginx"
+	err := os.WriteFile(tmpDir+"/docker-compose.yml", []byte(composeContent), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test compose file: %v", err)
+	}
+
+	body := `{"name":"test-role","role_path":"` + tmpDir + `"}`
 	req, _ := http.NewRequest("POST", "/roles", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	ts.router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("Failed to create test role: %s", w.Body.String())
+	}
 
 	var role map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &role)

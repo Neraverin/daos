@@ -2,17 +2,17 @@
 SELECT id, name, created_at, updated_at FROM roles ORDER BY name;
 
 -- name: GetRole :one
-SELECT id, name, compose_content, created_at, updated_at FROM roles WHERE id = ?;
+SELECT id, name, role_path, created_at, updated_at FROM roles WHERE id = ?;
 
 -- name: CreateRole :one
-INSERT INTO roles (id, name, compose_content)
+INSERT INTO roles (id, name, role_path)
 VALUES (?, ?, ?)
-RETURNING id, name, compose_content, created_at, updated_at;
+RETURNING id, name, role_path, created_at, updated_at;
 
 -- name: UpdateRole :one
-UPDATE roles SET name = ?, compose_content = ?, updated_at = datetime('now')
+UPDATE roles SET name = ?, role_path = ?, updated_at = datetime('now')
 WHERE id = ?
-RETURNING id, name, compose_content, created_at, updated_at;
+RETURNING id, name, role_path, created_at, updated_at;
 
 -- name: DeleteRole :exec
 DELETE FROM roles WHERE id = ?;

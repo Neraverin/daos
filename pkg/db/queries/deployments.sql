@@ -50,7 +50,7 @@ SELECT
     h.hostname,
     h.username,
     h.ssh_key_path,
-    r.compose_content
+    r.role_path
 FROM deployments d
 JOIN hosts h ON d.host_id = h.id
 JOIN roles r ON d.role_id = r.id

@@ -57,7 +57,7 @@ func setupTestServer(t *testing.T) *testServer {
 	CREATE TABLE IF NOT EXISTS roles (
 		id TEXT PRIMARY KEY,
 		name TEXT NOT NULL UNIQUE,
-		compose_content TEXT NOT NULL,
+		role_path TEXT NOT NULL,
 		created_at TEXT NOT NULL DEFAULT (datetime('now')),
 		updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 	);

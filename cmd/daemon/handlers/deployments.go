@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/Neraverin/daos/pkg/ansible"
 	"github.com/Neraverin/daos/pkg/api"
@@ -110,12 +112,12 @@ func (s *Server) RunDeployment(ctx *gin.Context, id uuid.UUID) {
 }
 
 type deploymentDetails struct {
-	hostID         string
-	roleID         string
-	hostname       string
-	username       string
-	sshKeyPath     string
-	composeContent string
+	hostID     string
+	roleID     string
+	hostname   string
+	username   string
+	sshKeyPath string
+	rolePath   string
 }
 
 func (s *Server) getDeploymentDetails(ctx context.Context, deploymentID string) (*deploymentDetails, error) {
@@ -125,12 +127,12 @@ func (s *Server) getDeploymentDetails(ctx context.Context, deploymentID string) 
 	}
 
 	return &deploymentDetails{
-		hostID:         details.HostID,
-		roleID:         details.RoleID,
-		hostname:       details.Hostname,
-		username:       details.Username,
-		sshKeyPath:     details.SshKeyPath,
-		composeContent: details.ComposeContent,
+		hostID:     details.HostID,
+		roleID:     details.RoleID,
+		hostname:   details.Hostname,
+		username:   details.Username,
+		sshKeyPath: details.SshKeyPath,
+		rolePath:   details.RolePath,
 	}, nil
 }
 
@@ -142,9 +144,14 @@ func (s *Server) runAnsibleDeployment(deploymentID string) {
 		return
 	}
 
-	s.logMessage(deploymentID, "Starting deployment to "+details.hostname)
+	composeContent, err := readComposeFile(details.rolePath)
+	if err != nil {
+		s.logMessage(deploymentID, "Failed to read compose file: "+err.Error())
+		s.updateStatus(deploymentID, "failed")
+		return
+	}
 
-	executor := ansible.NewExecutor(details.hostname, 22, details.username, details.sshKeyPath, details.composeContent)
+	executor := ansible.NewExecutor(details.hostname, 22, details.username, details.sshKeyPath, composeContent)
 	err = executor.Run(func(line string) {
 		s.logMessage(deploymentID, line)
 	})
@@ -157,6 +164,15 @@ func (s *Server) runAnsibleDeployment(deploymentID string) {
 
 	s.logMessage(deploymentID, "Deployment completed successfully")
 	s.updateStatus(deploymentID, "success")
+}
+
+func readComposeFile(rolePath string) (string, error) {
+	composePath := filepath.Join(rolePath, "docker-compose.yml")
+	content, err := os.ReadFile(composePath)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
 }
 
 func (s *Server) logMessage(deploymentID string, message string) {

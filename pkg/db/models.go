@@ -32,9 +32,9 @@ type Log struct {
 }
 
 type Role struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	ComposeContent string `json:"compose_content"`
-	CreatedAt      string `json:"created_at"`
-	UpdatedAt      string `json:"updated_at"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+	RolePath  string `json:"role_path"`
 }

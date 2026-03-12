@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -32,7 +33,13 @@ func TestCreateRole(t *testing.T) {
 	ts := setupTestServer(t)
 	defer ts.close()
 
-	body := `{"name":"test-role","compose_content":"version: '3'\nservices:\n  web:\n    image: nginx"}`
+	tmpDir := t.TempDir()
+	err := os.WriteFile(tmpDir+"/docker-compose.yml", []byte("version: '3'\nservices:\n  web:\n    image: nginx"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test compose file: %v", err)
+	}
+
+	body := `{"name":"test-role","role_path":"` + tmpDir + `"}`
 	req, _ := http.NewRequest("POST", "/roles", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -54,7 +61,13 @@ func TestListRolesWithData(t *testing.T) {
 	ts := setupTestServer(t)
 	defer ts.close()
 
-	createBody := `{"name":"test-role","compose_content":"version: '3'\nservices:\n  web:\n    image: nginx"}`
+	tmpDir := t.TempDir()
+	err := os.WriteFile(tmpDir+"/docker-compose.yml", []byte("version: '3'\nservices:\n  web:\n    image: nginx"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test compose file: %v", err)
+	}
+
+	createBody := `{"name":"test-role","role_path":"` + tmpDir + `"}`
 	createReq, _ := http.NewRequest("POST", "/roles", bytes.NewBufferString(createBody))
 	createReq.Header.Set("Content-Type", "application/json")
 	createW := httptest.NewRecorder()
@@ -80,7 +93,13 @@ func TestGetRoleByID(t *testing.T) {
 	ts := setupTestServer(t)
 	defer ts.close()
 
-	createBody := `{"name":"test-role","compose_content":"version: '3'\nservices:\n  web:\n    image: nginx"}`
+	tmpDir := t.TempDir()
+	err := os.WriteFile(tmpDir+"/docker-compose.yml", []byte("version: '3'\nservices:\n  web:\n    image: nginx"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test compose file: %v", err)
+	}
+
+	createBody := `{"name":"test-role","role_path":"` + tmpDir + `"}`
 	createReq, _ := http.NewRequest("POST", "/roles", bytes.NewBufferString(createBody))
 	createReq.Header.Set("Content-Type", "application/json")
 	createW := httptest.NewRecorder()
@@ -104,8 +123,8 @@ func TestGetRoleByID(t *testing.T) {
 	if role["id"] != roleID {
 		t.Errorf("Expected id %s, got %v", roleID, role["id"])
 	}
-	if role["compose_content"] == nil {
-		t.Error("Expected compose_content to be present")
+	if role["role_path"] == nil {
+		t.Error("Expected role_path to be present")
 	}
 }
 
@@ -126,7 +145,13 @@ func TestDeleteRole(t *testing.T) {
 	ts := setupTestServer(t)
 	defer ts.close()
 
-	createBody := `{"name":"test-role","compose_content":"version: '3'\nservices:\n  web:\n    image: nginx"}`
+	tmpDir := t.TempDir()
+	err := os.WriteFile(tmpDir+"/docker-compose.yml", []byte("version: '3'\nservices:\n  web:\n    image: nginx"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create test compose file: %v", err)
+	}
+
+	createBody := `{"name":"test-role","role_path":"` + tmpDir + `"}`
 	createReq, _ := http.NewRequest("POST", "/roles", bytes.NewBufferString(createBody))
 	createReq.Header.Set("Content-Type", "application/json")
 	createW := httptest.NewRecorder()

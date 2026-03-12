@@ -23,6 +23,7 @@ type model struct {
 	menu        models.Menu
 	hosts       models.HostsList
 	roles       models.RolesList
+	roleForm    models.RoleFormModel
 	deployments models.DeploymentsList
 	current     string
 }
@@ -36,6 +37,7 @@ func initialModel() model {
 		menu:        models.NewMenu(),
 		hosts:       models.NewHostsList(daemonURL),
 		roles:       models.NewRolesList(daemonURL),
+		roleForm:    models.NewRoleFormModel(daemonURL),
 		deployments: models.NewDeploymentsList(daemonURL),
 		current:     "menu",
 	}
@@ -57,6 +59,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.current = "menu"
 			return m, nil
 		}
+	case models.ShowRoleFormMsg:
+		m.current = "roleForm"
+		daemonURL := m.roleForm.DaemonURL()
+		if daemonURL == "" {
+			daemonURL = os.Getenv("DAOS_URL")
+			if daemonURL == "" {
+				daemonURL = "http://localhost:8080/api/v1"
+			}
+		}
+		m.roleForm = models.NewRoleFormModel(daemonURL)
+		return m, nil
+	case models.RefreshRolesMsg:
+		m.current = "roles"
 	}
 
 	switch m.current {
@@ -66,6 +81,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.hosts, cmd = m.hosts.Update(msg)
 	case "roles":
 		m.roles, cmd = m.roles.Update(msg)
+	case "roleForm":
+		updatedForm, formCmd := m.roleForm.Update(msg)
+		m.roleForm = updatedForm.(models.RoleFormModel)
+		cmd = formCmd
 	case "deployments":
 		m.deployments, cmd = m.deployments.Update(msg)
 	}
@@ -83,6 +102,8 @@ func (m model) View() string {
 		s = m.hosts.View()
 	case "roles":
 		s = m.roles.View()
+	case "roleForm":
+		s = m.roleForm.View()
 	case "deployments":
 		s = m.deployments.View()
 	default:
