@@ -1,4 +1,4 @@
-.PHONY: all build daemon tui clean test install-dependencies generate-api generate-sql deb rpm
+.PHONY: all build daemon tui clean test install-dependencies generate-api generate-sql deb rpm e2e-test
 
 VERSION := 0.1.0
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -24,7 +24,7 @@ clean:
 	rm -rf pkg/api/openapi.gen.go
 
 test:
-	@go test -v ./...
+	@go test -v $(go list ./... | grep -v tests/e2e)
 
 install-dependencies:
 	@go mod download
@@ -57,15 +57,20 @@ rpm: prepare-packaging
 	cd packaging/rpm && rpmbuild -bb daos.spec --define "_version ${VERSION}" --define "_topdir $(shell pwd)/packaging/rpm"
 	cp packaging/rpm/RPMS/x86_64/daos-${VERSION}-1.x86_64.rpm bin/
 
+e2e-test: build deb rpm
+	sudo go test -v ./tests/e2e/...
+
 help:
 	@echo "Available targets:"
 	@echo "  all                    - Build daemon and TUI (default)"
 	@echo "  daemon                 - Build daemon binary"
-	@echo "  tui                    - Build TUI binary"
+	@echo "  tui                   - Build TUI binary"
 	@echo "  build                  - Build both binaries"
 	@echo "  clean                  - Remove build artifacts"
-	@echo "  test                   - Run tests"
+	@echo "  test                   - Run unit tests (excludes e2e)"
 	@echo "  install-dependencies   - Install Go dependencies"
 	@echo "  generate-api           - Generate Go types from OpenAPI spec"
 	@echo "  generate-sql           - Generate Go code from SQL queries"
 	@echo "  deb                    - Build deb package"
+	@echo "  rpm                    - Build rpm package"
+	@echo "  e2e-test               - Build packages and run e2e tests (requires root)"
