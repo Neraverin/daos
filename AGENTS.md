@@ -175,3 +175,12 @@ docs/
 tests/
     daemon/           # Daemon API integration tests
 ```
+
+## Filesystem Layout Guidelines
+
+To ensure consistency, avoid conflicts with system directories, and simplify removal, all application files must be stored exclusively under /opt/daos.
+
+You may create any necessary subdirectories inside /opt/daos (e.g., bin, conf, data, logs, lib) to organize your files appropriately.
+Do not write files to standard system directories such as /etc, /var, /usr, /tmp, or any location outside /opt/daos.
+
+If you believe an exception is absolutely necessary, discuss it with the maintainers and document the rationale thoroughly. Otherwise, assume that the entire application—including configuration, runtime data, logs, and binaries—resides within /opt/daos.

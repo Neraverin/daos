@@ -1,0 +1,20 @@
+[Unit]
+Description=DAOS Deployment and Orchestration Service
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+EnvironmentFile=/opt/daos/registry/daos-registry.env
+ExecStartPre=-/usr/bin/docker rm -f daos-registry 2>/dev/null || true
+ExecStartPre=/usr/bin/docker run -d --name daos-registry \
+    --restart=unless-stopped \
+    -v /opt/daos/registry:/var/lib/registry \
+    -p ${DAOS_REGISTRY_PORT:-5000}:5000 \
+    registry:2
+ExecStart=/opt/daos/daemon
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

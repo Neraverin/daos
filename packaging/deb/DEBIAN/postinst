@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    configure)
+        # Create required directories
+        mkdir -p /opt/daos/registry
+        mkdir -p /etc/daos
+
+        # Install systemd service file
+        if [ -d /etc/systemd/system ]; then
+            cp /opt/daos/daos.service /etc/systemd/system/
+            systemctl daemon-reload
+        fi
+
+        # Pull registry image
+        if command -v docker &> /dev/null; then
+            docker pull registry:2 || true
+        fi
+        ;;
+esac
+
+#DEBIAN# automatically added by dh_systemd_enable
+#DEBIAN# automatically added by dh_systemd_start

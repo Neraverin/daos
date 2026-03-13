@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    remove|purge)
+        # Stop and remove the service
+        if [ -d /etc/systemd/system ]; then
+            systemctl stop daos || true
+            systemctl disable daos || true
+            rm -f /etc/systemd/system/daos.service
+            systemctl daemon-reload
+        fi
+        ;;
+esac

@@ -46,12 +46,14 @@ prepare-packaging:
 deb: prepare-packaging
 	cp bin/daemon packaging/deb/opt/daos
 	cp bin/tui packaging/deb/opt/daos
+	cp -r packaging/systemd packaging/deb/opt/daos/
 	dpkg-deb --build packaging/deb bin/daos_${VERSION}_amd64.deb
 
 rpm: prepare-packaging
 	cp bin/daemon packaging/rpm/SOURCES
 	cp bin/tui packaging/rpm/SOURCES
-	cd packaging/rpm/SOURCES && tar -czvf ../SOURCES/daos-${VERSION}.tar.gz daemon tui
+	cp -r packaging/systemd packaging/rpm/SOURCES
+	cd packaging/rpm/SOURCES && tar -czvf ../SOURCES/daos-${VERSION}.tar.gz daemon tui systemd
 	cd packaging/rpm && rpmbuild -bb daos.spec --define "_version ${VERSION}" --define "_topdir $(shell pwd)/packaging/rpm"
 	cp packaging/rpm/RPMS/x86_64/daos-${VERSION}-1.x86_64.rpm bin/
 
