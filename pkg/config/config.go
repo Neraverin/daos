@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Server   ServerConfig   `yaml:"server"`
 	Database DatabaseConfig `yaml:"database"`
+	Docker   DockerConfig   `yaml:"docker"`
 }
 
 type ServerConfig struct {
@@ -19,6 +20,11 @@ type ServerConfig struct {
 
 type DatabaseConfig struct {
 	Path string `yaml:"path"`
+}
+
+type DockerConfig struct {
+	Registry         string `yaml:"registry"`
+	ImageLoadTimeout int    `yaml:"image_load_timeout"`
 }
 
 func Load(path string) (*Config, error) {
@@ -41,6 +47,9 @@ func Load(path string) (*Config, error) {
 	if cfg.Database.Path == "" {
 		cfg.Database.Path = "/opt/daos/daos.db"
 	}
+	if cfg.Docker.ImageLoadTimeout == 0 {
+		cfg.Docker.ImageLoadTimeout = 300
+	}
 
 	return &cfg, nil
 }
@@ -53,6 +62,10 @@ func Default() *Config {
 		},
 		Database: DatabaseConfig{
 			Path: "/opt/daos/daos.db",
+		},
+		Docker: DockerConfig{
+			Registry:         "",
+			ImageLoadTimeout: 300,
 		},
 	}
 }

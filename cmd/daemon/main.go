@@ -45,7 +45,7 @@ func main() {
 	defer database.Close()
 
 	router := gin.Default()
-	api.RegisterHandlers(router, handlers.New(database))
+	api.RegisterHandlers(router, handlers.New(database, cfg))
 	router.StaticFile("/openapi.yaml", "docs/openapi.yaml")
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)

@@ -1,12 +1,14 @@
 # role-management Specification
 
 ## Purpose
+
 Manages Docker Compose roles for deployment orchestration.
 
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: User can upload a role
 The system SHALL store role content from a folder path on the daemon's host filesystem with a name.
+**Changed**: Added image file validation and processing during role creation.
 
 #### Scenario: Upload valid role from folder
 - **WHEN** user provides valid absolute folder path and name
@@ -30,10 +32,6 @@ The system SHALL store role content from a folder path on the daemon's host file
 #### Scenario: Upload role with invalid image file
 - **WHEN** user provides role with invalid or missing `Definitions.ImageFile`
 - **THEN** returns error indicating image file validation failed
-
-#### Scenario: Role without image file
-- **WHEN** user creates a role without `Definitions.ImageFile`
-- **THEN** role is created without image processing
 
 ### Requirement: User can list all roles
 The system SHALL return a list of all stored roles.

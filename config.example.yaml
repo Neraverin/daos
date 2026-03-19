@@ -4,3 +4,7 @@ server:
 
 database:
   path: "/opt/daos/daos.db"
+
+docker:
+  registry: "registry.example.com"
+  image_load_timeout: 300

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"github.com/Neraverin/daos/pkg/db"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gopkg.in/yaml.v3"
 )
 
 func (s *Server) ListRoles(ctx *gin.Context) {
@@ -65,6 +67,29 @@ func (s *Server) CreateRole(ctx *gin.Context) {
 		return
 	}
 
+	imageFile, err := extractImageFile(input.RolePath)
+	if err != nil {
+		api.ErrorJSON(ctx, http.StatusInternalServerError, "failed to parse role YAML: "+err.Error())
+		return
+	}
+
+	if imageFile != "" {
+		err = s.imageProcessor.ValidateImageFile(input.RolePath, imageFile)
+		if err != nil {
+			api.ErrorJSON(ctx, http.StatusBadRequest, "invalid image file: "+err.Error())
+			return
+		}
+
+		result, err := s.imageProcessor.ProcessImage(input.RolePath, imageFile)
+		if err != nil {
+			api.ErrorJSON(ctx, http.StatusInternalServerError, "failed to process image: "+err.Error())
+			return
+		}
+		if result != nil {
+			log.Printf("Processed image: %s (ID: %s)", result.ImageName, result.ImageID)
+		}
+	}
+
 	id := uuid.New().String()
 
 	r, err := s.db.CreateRole(ctx, db.CreateRoleParams{
@@ -87,6 +112,74 @@ func checkFilePermissions(path string) error {
 	}
 	file.Close()
 	return nil
+}
+
+type roleYAML struct {
+	Version string `yaml:"Version"`
+	Role    struct {
+		TypeId      string `yaml:"TypeId"`
+		Definitions struct {
+			ImageFile string `yaml:"ImageFile"`
+		} `yaml:"Definitions"`
+	} `yaml:"Role"`
+}
+
+func findRoleYAML(folderPath string) (string, error) {
+	entries, err := os.ReadDir(folderPath)
+	if err != nil {
+		return "", err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		ext := filepath.Ext(name)
+		if ext != ".yaml" && ext != ".yml" {
+			continue
+		}
+
+		filePath := filepath.Join(folderPath, name)
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			continue
+		}
+
+		var role roleYAML
+		if err := yaml.Unmarshal(data, &role); err != nil {
+			continue
+		}
+
+		if role.Role.TypeId != "" {
+			return filePath, nil
+		}
+	}
+
+	return "", nil
+}
+
+func extractImageFile(rolePath string) (string, error) {
+	yamlPath, err := findRoleYAML(rolePath)
+	if err != nil {
+		return "", err
+	}
+
+	if yamlPath == "" {
+		return "", nil
+	}
+
+	data, err := os.ReadFile(yamlPath)
+	if err != nil {
+		return "", err
+	}
+
+	var role roleYAML
+	if err := yaml.Unmarshal(data, &role); err != nil {
+		return "", err
+	}
+
+	return role.Role.Definitions.ImageFile, nil
 }
 
 func (s *Server) GetRole(ctx *gin.Context, id uuid.UUID) {

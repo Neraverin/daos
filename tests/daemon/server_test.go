@@ -8,6 +8,7 @@ import (
 
 	"github.com/Neraverin/daos/cmd/daemon/handlers"
 	"github.com/Neraverin/daos/pkg/api"
+	"github.com/Neraverin/daos/pkg/config"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -84,7 +85,7 @@ func setupTestServer(t *testing.T) *testServer {
 		t.Fatalf("Failed to create schema: %v", err)
 	}
 
-	server := handlers.New(db)
+	server := handlers.New(db, config.Default())
 
 	gin.SetMode(gin.TestMode)
 	router := gin.New()

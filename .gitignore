@@ -35,8 +35,10 @@ go.work.sum
 # .idea/
 # .vscode/
 
-# opencode
+# AI stuff (generated files)
 .opencode
+.kilocode
+
 
 # generated files
 pkg/db/*.sql.go

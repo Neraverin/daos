@@ -5,18 +5,25 @@ import (
 	"net/http"
 
 	"github.com/Neraverin/daos/pkg/api"
+	"github.com/Neraverin/daos/pkg/config"
 	"github.com/Neraverin/daos/pkg/db"
+	"github.com/Neraverin/daos/pkg/image"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
 type Server struct {
-	db    *db.Queries
-	dbRaw *sql.DB
+	db             *db.Queries
+	dbRaw          *sql.DB
+	imageProcessor *image.Processor
 }
 
-func New(database *sql.DB) *Server {
-	return &Server{db: db.New(database), dbRaw: database}
+func New(database *sql.DB, cfg *config.Config) *Server {
+	imageProcessor := image.NewProcessor(image.Config{
+		Registry:         cfg.Docker.Registry,
+		ImageLoadTimeout: cfg.Docker.ImageLoadTimeout,
+	})
+	return &Server{db: db.New(database), dbRaw: database, imageProcessor: imageProcessor}
 }
 
 func (s *Server) HealthCheck(ctx *gin.Context) {
