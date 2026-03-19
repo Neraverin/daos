@@ -2,12 +2,12 @@
 
 ## Purpose
 
-This capability adds integration tests that verify all REST API endpoints match their OpenAPI specification defined in the `daemon-api` spec. Tests can run against local or remote test stand via `TestStand` connection manager.
+This capability adds integration tests that verify all REST API endpoints match their OpenAPI specification defined in the `daemon-api` spec.
 
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: API integration tests exist
-The system SHALL provide integration tests for all REST API endpoints defined in the daemon-api specification.
+The system SHALL provide integration tests for all REST API endpoints defined in the daemon-api specification. **Changed**: Tests can now run against remote test stand via TestStand connection manager.
 
 #### Scenario: Health check test exists
 - **WHEN** tests are run for GET /health endpoint
